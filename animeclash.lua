@@ -66,7 +66,7 @@ local SelectedMap = "mapa1"
 -- Auto Farm Mobs
 local AutoFarmMob = false
 local RefreshMobs = false
-local SelectedMobs = {}
+local SelectedMob = nil
 
 -- =====================================
 -- FUNÇÃO PARA PEGAR NOMES ÚNICOS DOS MOBS
@@ -100,14 +100,14 @@ end)
 -- Auto Farm Mobs
 task.spawn(function()
     while true do
-        if AutoFarmMob and #SelectedMobs > 0 then
+        if AutoFarmMob and SelectedMob then
             local player = Players.LocalPlayer
             local character = player.Character or player.CharacterAdded:Wait()
             local hrp = character:WaitForChild("HumanoidRootPart")
 
             for _, mob in ipairs(workspace.Enemies:GetChildren()) do
                 local mobHRP = mob:FindFirstChild("HumanoidRootPart")
-                if mobHRP and table.find(SelectedMobs, mob.Name) then
+                if mob.Name == SelectedMob and mobHRP then
                     hrp.CFrame = mobHRP.CFrame * CFrame.new(0,0,5)
                     task.wait(0.5)
                 end
@@ -190,11 +190,10 @@ TabFarm:AddToggle("RefreshMobs", {
     Callback = function(v) RefreshMobs = v end
 })
 mobDropdown = TabFarm:AddDropdown("MobSelect", {
-    Title = "Selecionar Mobs",
+    Title = "Selecionar Mob",
     Values = getUniqueMobNames(),
-    Multi = true, -- permite selecionar vários
-    Default = {},
-    Callback = function(v) SelectedMobs = v end
+    Default = nil,
+    Callback = function(v) SelectedMob = v end
 })
 
 -- 2. Player Farm (Auto Click Turbo)
@@ -261,5 +260,5 @@ TabTeleport:AddButton({
     Callback = function()
         local args = {SelectedMap}
         pcall(function() RequestTeleport:InvokeServer(unpack(args)) end)
-    end
+end
 })
