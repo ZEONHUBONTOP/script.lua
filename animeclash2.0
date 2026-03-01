@@ -135,7 +135,7 @@ task.spawn(function()
                 local mobHRP = mob:FindFirstChild("HumanoidRootPart")
                 if mob.Name == SelectedMob and mobHRP then
                     hrp.CFrame = mobHRP.CFrame * CFrame.new(0,0,5)
-                    task.wait(0.01)
+                    task.wait(0.05)
                 end
             end
         end
