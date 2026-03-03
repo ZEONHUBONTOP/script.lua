@@ -5,6 +5,23 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
 
+-- REMOTES
+local GachaService = ReplicatedStorage:WaitForChild("Core"):WaitForChild("Knit")
+    :WaitForChild("Services"):WaitForChild("GachaService")
+local ExecuteSpin = GachaService:WaitForChild("RF"):WaitForChild("ExecuteSpin")
+
+local UpgradeService = ReplicatedStorage:WaitForChild("Core"):WaitForChild("Knit")
+    :WaitForChild("Services"):WaitForChild("UpgradeService")
+local ExecuteUpgrade = UpgradeService:WaitForChild("RF"):WaitForChild("ExecuteUpgradeType")
+
+local TeleportService = ReplicatedStorage:WaitForChild("Core"):WaitForChild("Knit")
+    :WaitForChild("Services"):WaitForChild("TeleportService")
+local RequestTeleport = TeleportService:WaitForChild("RF"):WaitForChild("RequestTeleport")
+
+local CombatService = ReplicatedStorage:WaitForChild("Core"):WaitForChild("Knit")
+    :WaitForChild("Services"):WaitForChild("CombatService")
+local Attack = CombatService:WaitForChild("RF"):WaitForChild("Attack")
+
 -- =====================================
 -- GAME NAME
 -- =====================================
@@ -37,21 +54,6 @@ local Window = Fluent:CreateWindow({
 })
 
 -- =====================================
--- REMOTES
--- =====================================
-local GachaService = ReplicatedStorage:WaitForChild("Core"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("GachaService")
-local ExecuteSpin = GachaService:WaitForChild("RF"):WaitForChild("ExecuteSpin")
-
-local UpgradeService = ReplicatedStorage:WaitForChild("Core"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("UpgradeService")
-local ExecuteUpgrade = UpgradeService:WaitForChild("RF"):WaitForChild("ExecuteUpgradeType")
-
-local TeleportService = ReplicatedStorage:WaitForChild("Core"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TeleportService")
-local RequestTeleport = TeleportService:WaitForChild("RF"):WaitForChild("RequestTeleport")
-
-local CombatService = ReplicatedStorage:WaitForChild("Core"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CombatService")
-local Attack = CombatService:WaitForChild("RF"):WaitForChild("Attack")
-
--- =====================================
 -- STATES
 -- =====================================
 local AutoFarm = false
@@ -66,7 +68,11 @@ local SelectedMap = "mapa1"
 -- Auto Farm Mobs
 local AutoFarmMob = false
 local RefreshMobs = false
-local SelectedMobs = {} -- lista de mobs selecionados
+local SelectedMobs = {}
+
+-- Auto Fruits
+local AutoCollectFruits = false
+local FruitsCollected = 0
 
 -- =====================================
 -- FUNÇÃO PARA PEGAR NOMES ÚNICOS DOS MOBS
@@ -80,6 +86,31 @@ local function getUniqueMobNames()
         end
     end
     return names
+end
+
+-- =====================================
+-- FUNÇÃO DE TELEPORTE + NOTIFICAÇÃO (FRUITS)
+-- =====================================
+local function teleportToFruit(fruit)
+    local player = Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local hrp = character:WaitForChild("HumanoidRootPart")
+
+    local fruitPart = fruit:FindFirstChild("HumanoidRootPart") 
+        or fruit:FindFirstChild("Handle") 
+        or fruit:FindFirstChildWhichIsA("BasePart")
+
+    if fruitPart then
+        hrp.CFrame = fruitPart.CFrame * CFrame.new(0, 0, 3)
+        FruitsCollected += 1
+
+        Fluent:Notify({
+            Title = "Fruta Coletada!",
+            Content = "Você coletou: " .. fruit.Name ..
+                      " | Total: " .. FruitsCollected,
+            Duration = 5
+        })
+    end
 end
 
 -- =====================================
@@ -97,7 +128,7 @@ task.spawn(function()
     end
 end)
 
--- Auto Farm Mobs (multi-select + 0.1s)
+-- Auto Farm Mobs
 task.spawn(function()
     while true do
         if AutoFarmMob and #SelectedMobs > 0 then
@@ -113,7 +144,11 @@ task.spawn(function()
                     for _, selected in ipairs(SelectedMobs) do
                         if mob.Name == selected then
                             hrp.CFrame = mobHRP.CFrame * CFrame.new(0,0,5)
-                            task.wait(0.1)
+                            while humanoid.Health > 0 and AutoFarmMob do
+                                local args = {4}
+                                pcall(function() Attack:InvokeServer(unpack(args)) end)
+                                task.wait(0.05)
+                            end
                         end
                     end
                 end
@@ -125,6 +160,19 @@ task.spawn(function()
         end
 
         task.wait(0.1)
+    end
+end)
+
+-- Auto Fruits
+task.spawn(function()
+    while true do
+        if AutoCollectFruits then
+            for _, fruit in ipairs(workspace.Fruits:GetChildren()) do
+                teleportToFruit(fruit)
+                task.wait(0.5)
+            end
+        end
+        task.wait(1)
     end
 end)
 
@@ -198,17 +246,22 @@ TabFarm:AddToggle("RefreshMobs", {
 mobDropdown = TabFarm:AddDropdown("MobSelect", {
     Title = "Selecionar Mobs",
     Values = getUniqueMobNames(),
-    Multi = true, -- permite selecionar vários
+    Multi = true,
     Default = {},
     Callback = function(v) SelectedMobs = v end
 })
 
--- 2. Player Farm (Auto Click Turbo)
+-- 2. Player Farm (Auto Click + Fruits)
 local TabPlayer = Window:AddTab({ Title = "Player Farm", Icon = "user" })
 TabPlayer:AddToggle("AutoFarm", {
     Title = "Auto Click (Turbo)",
     Default = false,
     Callback = function(v) AutoFarm = v end
+})
+TabPlayer:AddToggle("AutoCollectFruits", {
+    Title = "Auto Collect Fruits (Todas)",
+    Default = false,
+    Callback = function(v) AutoCollectFruits = v end
 })
 
 -- 3. Auto Star
