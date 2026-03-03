@@ -63,7 +63,7 @@ local AutoStar = false
 local SelectedStar = "One Piece"
 local AutoUpgrade = false
 local SelectedUpgrade = "Ninja"
-local SelectedMap = "mapa1"
+local SelectedMap = "One Piece"
 
 -- Auto Farm Mobs
 local AutoFarmMob = false
@@ -231,7 +231,7 @@ end)
 -- UI TABS
 -- =====================================
 
--- 1. Auto Farm (Mobs)
+-- Auto Farm (Mobs)
 local TabFarm = Window:AddTab({ Title = "Auto Farm", Icon = "sword" })
 TabFarm:AddToggle("AutoFarmMob", {
     Title = "Auto Farm Mobs",
@@ -251,7 +251,7 @@ mobDropdown = TabFarm:AddDropdown("MobSelect", {
     Callback = function(v) SelectedMobs = v end
 })
 
--- 2. Player Farm (Auto Click + Fruits)
+-- Player Farm (Auto Click + Fruits)
 local TabPlayer = Window:AddTab({ Title = "Player Farm", Icon = "user" })
 TabPlayer:AddToggle("AutoFarm", {
     Title = "Auto Click (Turbo)",
@@ -310,8 +310,8 @@ TabUpgrade:AddToggle("AutoUpgrade", {
 local TabTeleport = Window:AddTab({ Title = "Teleporte", Icon = "map" })
 TabTeleport:AddDropdown("TeleportSelect", {
     Title = "Selecionar Mapa",
-    Values = {"mapa1","mapa2","mapa3","mapa4"},
-    Default = "mapa1",
+    Values = {"OnePiece","Naruto","Tokyo Ghoul","DragonBall"},
+    Default = "OnePiece",
     Callback = function(v) SelectedMap = v end
 })
 TabTeleport:AddButton({
