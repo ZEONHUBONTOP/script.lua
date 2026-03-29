@@ -14,6 +14,7 @@ local Tabs = {
     Main = Window:AddTab({ Title = "Auto Farm", Icon = "target" }),
     Player = Window:AddTab({ Title = "Player", Icon = "swords" }),
     Hatch = Window:AddTab({ Title = "Hatch", Icon = "star" }),
+    Gamemodes = Window:AddTab({ Title = "Auto Gamemodes", Icon = "gamepad" }),
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
 
@@ -57,7 +58,7 @@ local EquipSelect = Tabs.Player:AddDropdown("SelectedEquip", {
 })
 local ToggleEquip = Tabs.Player:AddToggle("AutoEquipToggle", { Title = "Auto Equip Best (Loop)", Default = false })
 
--- === ABA: HATCH (TODOS STAR & GACHA) ===
+-- === ABA: HATCH ===
 Tabs.Hatch:AddSection("Auto Gacha")
 local GachaSelect = Tabs.Hatch:AddDropdown("SelectedGacha", {
     Title = "Selecionar Power",
@@ -73,6 +74,20 @@ local StarSelect = Tabs.Hatch:AddDropdown("SelectedStar", {
     Default = "Dragon Ball (W1)",
 })
 local ToggleStar = Tabs.Hatch:AddToggle("AutoStarToggle", { Title = "Star Turbo (x6)", Default = false })
+
+-- === ABA: AUTO GAMEMODES (CAMINHOS CORRIGIDOS) ===
+Tabs.Gamemodes:AddSection("Entrar nos Modos")
+local ModeSelect = Tabs.Gamemodes:AddDropdown("SelectedMode", {
+    Title = "Escolher Modo",
+    Values = {"Wisteria Raid (W4)", "Tower Easy"},
+    Default = "Wisteria Raid (W4)",
+})
+
+local ToggleJoin = Tabs.Gamemodes:AddToggle("AutoJoinMode", { Title = "Auto Entrar (Loop)", Default = false })
+
+Tabs.Gamemodes:AddSection("Auto Farm")
+local ToggleWisteria = Tabs.Gamemodes:AddToggle("FarmWisteria", { Title = "Farm Wisteria (Raid1)", Default = false })
+local ToggleTower = Tabs.Gamemodes:AddToggle("FarmTower", { Title = "Farm Tower (Raid1)", Default = false })
 
 -- === ABA: SETTINGS ===
 Tabs.Settings:AddSection("Performance & Privacy")
@@ -107,19 +122,32 @@ Tabs.Settings:AddButton({
 
 -- === LOOPS DE EXECUÇÃO ===
 
--- Auto Click (Corrigido)
+-- Loop Auto Join
+task.spawn(function()
+    while true do
+        if Options.AutoJoinMode and Options.AutoJoinMode.Value then
+            pcall(function()
+                local mode = Options.SelectedMode.Value
+                local r = game:GetService("ReplicatedStorage"):WaitForChild("Remotes")
+                if mode == "Wisteria Raid (W4)" then r:WaitForChild("OpenWisteriaRaid"):FireServer()
+                elseif mode == "Tower Easy" then r:WaitForChild("JoinTowerEasy"):FireServer() end
+            end)
+        end
+        task.wait(2)
+    end
+end)
+
+-- Auto Click (WaitForChild Corrigido)
 task.spawn(function()
     while true do
         if Options.AutoClickToggle and Options.AutoClickToggle.Value then
-            pcall(function()
-                game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Clicked"):FireServer()
-            end)
+            pcall(function() game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Clicked"):FireServer() end)
         end
         task.wait(0.1)
     end
 end)
 
--- Gacha Turbo (0.01s) - COBRE TODOS OS POWERS
+-- Gacha & Star Turbo (0.01s)
 task.spawn(function()
     while true do
         if Options.AutoGachaToggle and Options.AutoGachaToggle.Value then
@@ -134,13 +162,6 @@ task.spawn(function()
                 elseif s == "BreathingPower (W4)" then r:WaitForChild("RollBreathingPower"):FireServer() end
             end)
         end
-        task.wait(0.01)
-    end
-end)
-
--- Star Turbo (0.01s) - COBRE TODOS OS MUNDOS
-task.spawn(function()
-    while true do
         if Options.AutoStarToggle and Options.AutoStarToggle.Value then
             pcall(function()
                 local s = Options.SelectedStar.Value
@@ -152,7 +173,7 @@ task.spawn(function()
     end
 end)
 
--- Auto Farm (0.1s)
+-- Auto Farm Principal
 task.spawn(function()
     while true do
         if Options.AutoFarmToggle and Options.AutoFarmToggle.Value then
@@ -173,7 +194,60 @@ task.spawn(function()
     end
 end)
 
--- Auto Equip (Loop 5s)
+-- Loop Farm Wisteria (CORRIGIDO PARA RAID1)
+task.spawn(function()
+    while true do
+        if Options.FarmWisteria and Options.FarmWisteria.Value then
+            pcall(function()
+                -- Verifica se a pasta existe antes de tentar pegar os filhos
+                local folder = workspace:FindFirstChild("WisteriaRaid")
+                local raid1 = folder and folder:FindFirstChild("Raid1")
+                local enemies = raid1 and raid1:FindFirstChild("Enemy")
+                
+                if enemies and #enemies:GetChildren() > 0 then
+                    for _, mob in pairs(enemies:GetChildren()) do
+                        if not Options.FarmWisteria.Value then break end
+                        if mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 and mob:FindFirstChild("HumanoidRootPart") then
+                            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 3, 0)
+                            task.wait(0.1)
+                        end
+                    end
+                else 
+                    task.wait(1) -- Espera os mobs spawnarem
+                end
+            end)
+        end
+        task.wait()
+    end
+end)
+
+-- Loop Farm Tower (Seguro)
+task.spawn(function()
+    while true do
+        if Options.FarmTower and Options.FarmTower.Value then
+            pcall(function()
+                local folder = workspace:FindFirstChild("TowerRaid")
+                local raid1 = folder and folder:FindFirstChild("Raid1")
+                local enemies = raid1 and raid1:FindFirstChild("Enemy")
+                
+                if enemies and #enemies:GetChildren() > 0 then
+                    for _, mob in pairs(enemies:GetChildren()) do
+                        if not Options.FarmTower.Value then break end
+                        if mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 and mob:FindFirstChild("HumanoidRootPart") then
+                            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 3, 0)
+                            task.wait(0.1)
+                        end
+                    end
+                else 
+                    task.wait(1) 
+                end
+            end)
+        end
+        task.wait()
+    end
+end)
+
+-- Auto Equip (5s)
 task.spawn(function()
     while true do
         if Options.AutoEquipToggle and Options.AutoEquipToggle.Value then
@@ -190,10 +264,9 @@ task.spawn(function()
     end
 end)
 
--- Inicialização dinâmica de Mobs
+-- Inicialização Mobs
 MapSelect:OnChanged(function()
-    local worldName = Options.SelectedMap.Value:gsub(" ", "")
-    local worldPath = workspace:FindFirstChild(worldName)
+    local worldPath = workspace:FindFirstChild(Options.SelectedMap.Value:gsub(" ", ""))
     local list = {}
     if worldPath and worldPath:FindFirstChild("Enemy") then
         for _, enemy in pairs(worldPath.Enemy:GetChildren()) do
@@ -204,4 +277,4 @@ MapSelect:OnChanged(function()
 end)
 
 Window:SelectTab(1)
-Fluent:Notify({Title = "Zeo Hub", Content = "Tudo Pronto! Auto Stars e Gachas Ativos.", Duration = 5})
+Fluent:Notify({Title = "Zeo Hub", Content = "Caminho da Wisteria corrigido para Raid1!", Duration = 5})
