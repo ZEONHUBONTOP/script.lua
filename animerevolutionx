@@ -4,7 +4,7 @@ local Window = Fluent:CreateWindow({
     Title = "ZeoHub",
     SubTitle = "By Zeo Team",
     TabWidth = 160,
-    Size = UDim2.fromOffset(400, 300),
+    Size = UDim2.fromOffset(580, 460),
     Acrylic = true,
     Theme = "Dark"
 })
@@ -19,14 +19,16 @@ local Options = Fluent.Options
 local selectedFarmWorld = "1"
 local selectedMob = ""
 
--- Gacha Config
+-- Configuração Expandida de Gachas
 local GachaList = {
     ["BijusPower W1"] = "World1_Bijuus",
     ["EyesPower W1"] = "World1_Eyes",
-    ["SaiyanPower W2"] = "World2_Saiya"
+    ["SaiyanPower W2"] = "World2_Saiya",
+    ["VampiresPower W3"] = "World3_Vampires",
+    ["StrawHats Power W4"] = "World4_Strawhats"
 }
 
--- Função segura para pegar Mobs
+-- Função para listar Mobs de forma segura
 local function getMobList()
     local list = {}
     pcall(function()
@@ -73,7 +75,7 @@ local FarmToggle = Tabs.Main:AddToggle("FarmToggle", {Title = "Ativar Auto Farm 
 
 task.spawn(function()
     while true do
-        if Options.FarmToggle.Value and selectedMob ~= "" then
+        if Options.FarmToggle.Value and selectedMob ~= "" and selectedMob ~= "Nenhum Mob Encontrado" then
             pcall(function()
                 local enemies = workspace.Worlds[selectedFarmWorld].Enemies:GetChildren()
                 for _, mob in pairs(enemies) do
@@ -111,7 +113,7 @@ Tabs.Stars:AddSection("Auto Open Eggs")
 
 local EggDrop = Tabs.Stars:AddDropdown("EggDrop", {
     Title = "Selecionar Ovo",
-    Values = {"World1", "World2"},
+    Values = {"World1", "World2", "World4"}, -- Adicionado World 4
     Default = "World1"
 })
 
@@ -132,7 +134,7 @@ Tabs.Stars:AddSection("Auto Gacha")
 
 local GachaDrop = Tabs.Stars:AddDropdown("GachaDrop", {
     Title = "Selecionar Gachas",
-    Values = {"BijusPower W1", "EyesPower W1", "SaiyanPower W2"},
+    Values = {"BijusPower W1", "EyesPower W1", "SaiyanPower W2", "VampiresPower W3", "StrawHats Power W4"},
     Multi = true,
     Default = {}
 })
