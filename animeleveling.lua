@@ -161,11 +161,11 @@ task.spawn(function()
                         if not Options.FarmWisteria.Value then break end
                         if mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 and mob:FindFirstChild("HumanoidRootPart") then
                             game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 3, 0)
-                            task.wait(0.2) -- Delay de 0.5s conforme pedido
+                            task.wait(0.15) -- Delay de 0.5s conforme pedido
                         end
                     end
                 else 
-                    task.wait(5) 
+                    task.wait(1) 
                 end
             end)
         end
