@@ -4,7 +4,7 @@ local Window = Fluent:CreateWindow({
     Title = "ZeoHub",
     SubTitle = "By Zeo Team",
     TabWidth = 160,
-    Size = UDim2.fromOffset(580, 460),
+    Size = UDim2.fromOffset(400, 300),
     Acrylic = true,
     Theme = "Dark"
 })
@@ -16,114 +16,142 @@ local Tabs = {
 }
 
 local Options = Fluent.Options
-local selectedMob = ""
 local selectedFarmWorld = "1"
+local selectedMob = ""
 
--- Função para listar Mobs
-local function getMobList()
-    local list = {}
-    local path = workspace:FindFirstChild("Worlds") and workspace.Worlds:FindFirstChild(selectedFarmWorld) and workspace.Worlds[selectedFarmWorld]:FindFirstChild("Enemies")
-    if path then
-        for _, mob in pairs(path:GetChildren()) do
-            if not table.find(list, mob.Name) then table.insert(list, mob.Name) end
-        end
-    end
-    return list
-end
-
-----------------------------------------------------------------
--- ABA: AUTO FARM
-----------------------------------------------------------------
-Tabs.Main:AddDropdown("WorldFarmDropdown", { Title = "Selecionar Mundo", Values = {"1", "2"}, Multi = false, Default = "1" }):OnChanged(function(v)
-    selectedFarmWorld = v
-    Options.MobDropdown:SetValues(getMobList())
-end)
-
-Tabs.Main:AddDropdown("MobDropdown", { Title = "Selecionar Mob", Values = getMobList(), Multi = false, Default = nil }):OnChanged(function(v)
-    selectedMob = v
-end)
-
-Tabs.Main:AddButton({ Title = "Refresh Mobs", Callback = function() Options.MobDropdown:SetValues(getMobList()) end })
-
-Tabs.Main:AddToggle("FarmMobToggle", {Title = "Ativar Auto Farm Mob (0.1s)", Default = false }):OnChanged(function()
-    task.spawn(function()
-        while Options.FarmMobToggle.Value do
-            pcall(function()
-                if selectedMob ~= "" then
-                    for _, mob in pairs(workspace.Worlds[selectedFarmWorld].Enemies:GetChildren()) do
-                        if not Options.FarmMobToggle.Value then break end
-                        if mob.Name == selectedMob and mob:FindFirstChild("HumanoidRootPart") then
-                            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
-                            task.wait(0.1)
-                        end
-                    end
-                end
-            end)
-            task.wait()
-        end
-    end)
-end)
-
-----------------------------------------------------------------
--- ABA: PLAYER
-----------------------------------------------------------------
-Tabs.Player:AddToggle("ClickToggle", {Title = "Auto Click Turbo", Default = false }):OnChanged(function()
-    task.spawn(function()
-        while Options.ClickToggle.Value do
-            local event = game:GetService("ReplicatedStorage"):WaitForChild("simpledeev_Framework"):WaitForChild("Library"):WaitForChild("Network"):WaitForChild("Events"):FindFirstChild("Click")
-            if event then event:FireServer() end
-            task.wait()
-        end
-    end)
-end)
-
-----------------------------------------------------------------
--- ABA: AUTO STAR
-----------------------------------------------------------------
--- Seção de Ovos (Eggs)
-Tabs.Stars:AddSection("Auto Open Eggs")
-
-Tabs.Stars:AddDropdown("StarDropdown", { Title = "Selecionar Mundo", Values = {"World1", "World2"}, Multi = false, Default = "World1" })
-
-Tabs.Stars:AddToggle("EggToggle", {Title = "Ativar Auto Open (0.01s)", Default = false }):OnChanged(function()
-    task.spawn(function()
-        while Options.EggToggle.Value do
-            local event = game:GetService("ReplicatedStorage"):WaitForChild("simpledeev_Framework"):WaitForChild("Library"):WaitForChild("Network"):WaitForChild("Events"):FindFirstChild("OpenEgg")
-            if event then event:FireServer(Options.StarDropdown.Value) end
-            task.wait(0.01)
-        end
-    end)
-end)
-
--- Seção de Gacha (0.01s)
-Tabs.Stars:AddSection("Auto Gacha")
-
+-- Gacha Config
 local GachaList = {
     ["BijusPower W1"] = "World1_Bijuus",
     ["EyesPower W1"] = "World1_Eyes",
     ["SaiyanPower W2"] = "World2_Saiya"
 }
 
-Tabs.Stars:AddDropdown("GachaDropdown", {
+-- Função segura para pegar Mobs
+local function getMobList()
+    local list = {}
+    pcall(function()
+        local path = workspace.Worlds[selectedFarmWorld].Enemies
+        for _, mob in pairs(path:GetChildren()) do
+            if not table.find(list, mob.Name) then
+                table.insert(list, mob.Name)
+            end
+        end
+    end)
+    return #list > 0 and list or {"Nenhum Mob Encontrado"}
+end
+
+----------------------------------------------------------------
+-- ABA: AUTO FARM
+----------------------------------------------------------------
+local FarmWorldDrop = Tabs.Main:AddDropdown("FarmWorldDrop", {
+    Title = "Selecionar Mundo",
+    Values = {"1", "2"},
+    Default = "1"
+})
+
+local MobDrop = Tabs.Main:AddDropdown("MobDrop", {
+    Title = "Selecionar Mob",
+    Values = getMobList(),
+    Default = nil
+})
+
+FarmWorldDrop:OnChanged(function(Value)
+    selectedFarmWorld = Value
+    MobDrop:SetValues(getMobList())
+end)
+
+MobDrop:OnChanged(function(Value)
+    selectedMob = Value
+end)
+
+Tabs.Main:AddButton({
+    Title = "Refresh Mobs",
+    Callback = function() MobDrop:SetValues(getMobList()) end
+})
+
+local FarmToggle = Tabs.Main:AddToggle("FarmToggle", {Title = "Ativar Auto Farm Mob (0.1s)", Default = false })
+
+task.spawn(function()
+    while true do
+        if Options.FarmToggle.Value and selectedMob ~= "" then
+            pcall(function()
+                local enemies = workspace.Worlds[selectedFarmWorld].Enemies:GetChildren()
+                for _, mob in pairs(enemies) do
+                    if not Options.FarmToggle.Value then break end
+                    if mob.Name == selectedMob and mob:FindFirstChild("HumanoidRootPart") then
+                        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
+                        task.wait(0.1)
+                    end
+                end
+            end)
+        end
+        task.wait(0.1)
+    end
+end)
+
+----------------------------------------------------------------
+-- ABA: PLAYER
+----------------------------------------------------------------
+local ClickToggle = Tabs.Player:AddToggle("ClickToggle", {Title = "Auto Click Turbo", Default = false })
+
+task.spawn(function()
+    while true do
+        if Options.ClickToggle.Value then
+            local event = game:GetService("ReplicatedStorage"):WaitForChild("simpledeev_Framework"):WaitForChild("Library"):WaitForChild("Network"):WaitForChild("Events"):FindFirstChild("Click")
+            if event then event:FireServer() end
+        end
+        task.wait()
+    end
+end)
+
+----------------------------------------------------------------
+-- ABA: AUTO STAR
+----------------------------------------------------------------
+Tabs.Stars:AddSection("Auto Open Eggs")
+
+local EggDrop = Tabs.Stars:AddDropdown("EggDrop", {
+    Title = "Selecionar Ovo",
+    Values = {"World1", "World2"},
+    Default = "World1"
+})
+
+local EggToggle = Tabs.Stars:AddToggle("EggToggle", {Title = "Ativar Auto Open (0.01s)", Default = false })
+
+task.spawn(function()
+    while true do
+        if Options.EggToggle.Value then
+            local event = game:GetService("ReplicatedStorage"):WaitForChild("simpledeev_Framework"):WaitForChild("Library"):WaitForChild("Network"):WaitForChild("Events"):FindFirstChild("OpenEgg")
+            if event then event:FireServer(Options.EggDrop.Value) end
+            task.wait(0.01)
+        end
+        task.wait(0.01)
+    end
+end)
+
+Tabs.Stars:AddSection("Auto Gacha")
+
+local GachaDrop = Tabs.Stars:AddDropdown("GachaDrop", {
     Title = "Selecionar Gachas",
     Values = {"BijusPower W1", "EyesPower W1", "SaiyanPower W2"},
     Multi = true,
-    Default = {},
+    Default = {}
 })
 
-Tabs.Stars:AddToggle("GachaToggle", {Title = "Ativar Auto Gacha (0.01s)", Default = false }):OnChanged(function()
-    task.spawn(function()
-        local remote = game:GetService("ReplicatedStorage"):WaitForChild("simpledeev_Framework"):WaitForChild("Library"):WaitForChild("Network"):WaitForChild("Functions"):WaitForChild("RollGacha")
-        
-        while Options.GachaToggle.Value do
-            for name, isSelected in pairs(Options.GachaDropdown.Value) do
+local GachaToggle = Tabs.Stars:AddToggle("GachaToggle", {Title = "Ativar Auto Gacha (0.01s)", Default = false })
+
+task.spawn(function()
+    local remote = game:GetService("ReplicatedStorage"):WaitForChild("simpledeev_Framework"):WaitForChild("Library"):WaitForChild("Network"):WaitForChild("Functions"):WaitForChild("RollGacha")
+    while true do
+        if Options.GachaToggle.Value then
+            for name, isSelected in pairs(Options.GachaDrop.Value) do
                 if isSelected and Options.GachaToggle.Value then
                     remote:InvokeServer(GachaList[name])
                 end
             end
-            task.wait(0.01) -- Velocidade turbo solicitada
+            task.wait(0.01)
         end
-    end)
+        task.wait(0.01)
+    end
 end)
 
 Window:SelectTab(1)
