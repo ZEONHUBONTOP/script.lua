@@ -1,8 +1,8 @@
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
 local Window = Fluent:CreateWindow({
-    Title = "ZeoHub",
-    SubTitle = "by Zeon Team",
+    Title = "ZeoHub", -- Título atualizado
+    SubTitle = "By Zeo Team", -- Subtítulo atualizado
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
     Acrylic = true,
@@ -16,10 +16,9 @@ local Tabs = {
 }
 
 local Options = Fluent.Options
-local autoFarmMob = false
 local selectedMob = ""
 
--- Função para atualizar a lista de Mobs do World 1
+-- Função para listar Mobs do Mundo 1
 local function getMobList()
     local list = {}
     local enemiesFolder = workspace:FindFirstChild("Worlds") and workspace.Worlds:FindFirstChild("1") and workspace.Worlds["1"]:FindFirstChild("Enemies")
@@ -34,9 +33,9 @@ local function getMobList()
 end
 
 ----------------------------------------------------------------
--- ABA: AUTO FARM (MOBS)
+-- ABA: AUTO FARM (MOBS - TELEPORT LOOP)
 ----------------------------------------------------------------
-Tabs.Main:AddParagraph({ Title = "Farm de Inimigos", Content = "Selecione um mob do Mundo 1." })
+Tabs.Main:AddParagraph({ Title = "Farm de Inimigos", Content = "Teleporta para todos os mobs com o nome escolhido (0.1s)." })
 
 local MobDropdown = Tabs.Main:AddDropdown("MobDropdown", {
     Title = "Selecionar Mob",
@@ -57,23 +56,28 @@ Tabs.Main:AddButton({
     end
 })
 
-local FarmMobToggle = Tabs.Main:AddToggle("FarmMobToggle", {Title = "Ativar Auto Farm Mob", Default = false })
+local FarmMobToggle = Tabs.Main:AddToggle("FarmMobToggle", {Title = "Ativar Auto Farm Mob (0.1s)", Default = false })
 
 FarmMobToggle:OnChanged(function()
-    autoFarmMob = Options.FarmMobToggle.Value
     task.spawn(function()
-        while autoFarmMob do
+        while Options.FarmMobToggle.Value do
             pcall(function()
                 if selectedMob ~= "" then
                     local enemiesFolder = workspace.Worlds["1"].Enemies
+                    -- Loop por todos os filhos da pasta de inimigos
                     for _, mob in pairs(enemiesFolder:GetChildren()) do
-                        if mob.Name == selectedMob and mob:FindFirstChild("HumanoidRootPart") and autoFarmMob then
-                            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+                        -- Se o Toggle for desligado durante o loop, para imediatamente
+                        if not Options.FarmMobToggle.Value then break end
+                        
+                        if mob.Name == selectedMob and mob:FindFirstChild("HumanoidRootPart") then
+                            -- Teleporta para o mob atual da lista
+                            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
+                            task.wait(0.1) -- Delay solicitado
                         end
                     end
                 end
             end)
-            task.wait(0.1)
+            task.wait() -- Pequena pausa para não travar o script se não houver mobs
         end
     end)
 end)
@@ -98,7 +102,7 @@ ClickToggle:OnChanged(function()
 end)
 
 ----------------------------------------------------------------
--- ABA: AUTO STAR (WORLD 1 APENAS)
+-- ABA: AUTO STAR (WORLD 1)
 ----------------------------------------------------------------
 Tabs.Stars:AddParagraph({ Title = "Configuração do Mundo", Content = "Atualmente configurado apenas para: **World1**" })
 
@@ -109,7 +113,6 @@ EggToggle:OnChanged(function()
         while Options.EggToggle.Value do
             local event = game:GetService("ReplicatedStorage"):WaitForChild("simpledeev_Framework"):WaitForChild("Library"):WaitForChild("Network"):WaitForChild("Events"):FindFirstChild("OpenEgg")
             if event then 
-                -- Enviando World1 fixo
                 event:FireServer("World1") 
             end
             task.wait(0.01)
