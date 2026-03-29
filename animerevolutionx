@@ -1,8 +1,8 @@
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
 local Window = Fluent:CreateWindow({
-    Title = "Gemini Hub | Ultra Speed",
-    SubTitle = "by Gemini",
+    Title = "ZeoHub",
+    SubTitle = "by Zeon Team",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
     Acrylic = true,
