@@ -1,8 +1,8 @@
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
 local Window = Fluent:CreateWindow({
-    Title = "ZeoHub", -- Título atualizado
-    SubTitle = "By Zeo Team", -- Subtítulo atualizado
+    Title = "ZeoHub",
+    SubTitle = "By Zeo Team",
     TabWidth = 160,
     Size = UDim2.fromOffset(400, 300),
     Acrylic = true,
@@ -17,13 +17,15 @@ local Tabs = {
 
 local Options = Fluent.Options
 local selectedMob = ""
+local selectedFarmWorld = "1"
 
--- Função para listar Mobs do Mundo 1
+-- Função para listar Mobs baseada nos dois mundos existentes
 local function getMobList()
     local list = {}
-    local enemiesFolder = workspace:FindFirstChild("Worlds") and workspace.Worlds:FindFirstChild("1") and workspace.Worlds["1"]:FindFirstChild("Enemies")
-    if enemiesFolder then
-        for _, mob in pairs(enemiesFolder:GetChildren()) do
+    local path = workspace:FindFirstChild("Worlds") and workspace.Worlds:FindFirstChild(selectedFarmWorld) and workspace.Worlds[selectedFarmWorld]:FindFirstChild("Enemies")
+    
+    if path then
+        for _, mob in pairs(path:GetChildren()) do
             if not table.find(list, mob.Name) then
                 table.insert(list, mob.Name)
             end
@@ -33,9 +35,14 @@ local function getMobList()
 end
 
 ----------------------------------------------------------------
--- ABA: AUTO FARM (MOBS - TELEPORT LOOP)
+-- ABA: AUTO FARM (MUNDOS 1 E 2)
 ----------------------------------------------------------------
-Tabs.Main:AddParagraph({ Title = "Farm de Inimigos", Content = "Teleporta para todos os mobs com o nome escolhido (0.1s)." })
+local WorldFarmDropdown = Tabs.Main:AddDropdown("WorldFarmDropdown", {
+    Title = "Selecionar Mundo",
+    Values = {"1", "2"},
+    Multi = false,
+    Default = "1",
+})
 
 local MobDropdown = Tabs.Main:AddDropdown("MobDropdown", {
     Title = "Selecionar Mob",
@@ -44,13 +51,17 @@ local MobDropdown = Tabs.Main:AddDropdown("MobDropdown", {
     Default = nil,
 })
 
+WorldFarmDropdown:OnChanged(function(Value)
+    selectedFarmWorld = Value
+    MobDropdown:SetValues(getMobList())
+end)
+
 MobDropdown:OnChanged(function(Value)
     selectedMob = Value
 end)
 
 Tabs.Main:AddButton({
     Title = "Refresh Mobs",
-    Description = "Atualiza a lista de inimigos",
     Callback = function()
         MobDropdown:SetValues(getMobList())
     end
@@ -63,57 +74,56 @@ FarmMobToggle:OnChanged(function()
         while Options.FarmMobToggle.Value do
             pcall(function()
                 if selectedMob ~= "" then
-                    local enemiesFolder = workspace.Worlds["1"].Enemies
-                    -- Loop por todos os filhos da pasta de inimigos
+                    local enemiesFolder = workspace.Worlds[selectedFarmWorld].Enemies
                     for _, mob in pairs(enemiesFolder:GetChildren()) do
-                        -- Se o Toggle for desligado durante o loop, para imediatamente
                         if not Options.FarmMobToggle.Value then break end
-                        
                         if mob.Name == selectedMob and mob:FindFirstChild("HumanoidRootPart") then
-                            -- Teleporta para o mob atual da lista
                             game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
-                            task.wait(0.1) -- Delay solicitado
+                            task.wait(0.1)
                         end
                     end
                 end
             end)
-            task.wait() -- Pequena pausa para não travar o script se não houver mobs
-        end
-    end)
-end)
-
-----------------------------------------------------------------
--- ABA: PLAYER (SPEED, JUMP & CLICKER)
-----------------------------------------------------------------
-Tabs.Player:AddSlider("WalkSpeed", { Title = "Velocidade", Default = 16, Min = 16, Max = 250, Rounding = 1, Callback = function(v) game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = v end })
-Tabs.Player:AddSlider("JumpPower", { Title = "Pulo", Default = 50, Min = 50, Max = 300, Rounding = 1, Callback = function(v) game.Players.LocalPlayer.Character.Humanoid.JumpPower = v end })
-
-Tabs.Player:AddDivider()
-
-local ClickToggle = Tabs.Player:AddToggle("ClickToggle", {Title = "Auto Click Turbo", Default = false })
-ClickToggle:OnChanged(function()
-    task.spawn(function()
-        while Options.ClickToggle.Value do
-            local event = game:GetService("ReplicatedStorage"):WaitForChild("simpledeev_Framework"):WaitForChild("Library"):WaitForChild("Network"):WaitForChild("Events"):FindFirstChild("Click")
-            if event then event:FireServer() end
             task.wait()
         end
     end)
 end)
 
 ----------------------------------------------------------------
--- ABA: AUTO STAR (WORLD 1)
+-- ABA: PLAYER
 ----------------------------------------------------------------
-Tabs.Stars:AddParagraph({ Title = "Configuração do Mundo", Content = "Atualmente configurado apenas para: **World1**" })
+local ClickToggle = Tabs.Player:AddToggle("ClickToggle", {Title = "Auto Click Turbo", Default = false })
 
-local EggToggle = Tabs.Stars:AddToggle("EggToggle", {Title = "Auto Open Eggs World 1 (0.01s)", Default = false })
+ClickToggle:OnChanged(function()
+    task.spawn(function()
+        while Options.ClickToggle.Value do
+            local event = game:GetService("ReplicatedStorage"):WaitForChild("simpledeev_Framework"):WaitForChild("Library"):WaitForChild("Network"):WaitForChild("Events"):FindFirstChild("Click")
+            if event then 
+                event:FireServer() 
+            end
+            task.wait()
+        end
+    end)
+end)
+
+----------------------------------------------------------------
+-- ABA: AUTO STAR (WORLD 1 E 2)
+----------------------------------------------------------------
+local StarDropdown = Tabs.Stars:AddDropdown("StarDropdown", {
+    Title = "Selecionar Ovo",
+    Values = {"World1", "World2"},
+    Multi = false,
+    Default = "World1",
+})
+
+local EggToggle = Tabs.Stars:AddToggle("EggToggle", {Title = "Auto Open Eggs (0.01s)", Default = false })
 
 EggToggle:OnChanged(function()
     task.spawn(function()
         while Options.EggToggle.Value do
             local event = game:GetService("ReplicatedStorage"):WaitForChild("simpledeev_Framework"):WaitForChild("Library"):WaitForChild("Network"):WaitForChild("Events"):FindFirstChild("OpenEgg")
             if event then 
-                event:FireServer("World1") 
+                event:FireServer(Options.StarDropdown.Value) 
             end
             task.wait(0.01)
         end
