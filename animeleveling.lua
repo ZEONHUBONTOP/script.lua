@@ -42,8 +42,24 @@ local ToggleFarm = Tabs.Main:AddToggle("AutoFarmToggle", { Title = "Ativar Auto 
 Tabs.Player:AddSection("Combat")
 local ToggleClick = Tabs.Player:AddToggle("AutoClickToggle", { Title = "Auto Click", Default = false })
 
--- === ABA: AUTO GAMEMODES (SEÇÕES SEPARADAS) ===
+-- === ABA: HATCH (VOLTOU) ===
+Tabs.Hatch:AddSection("Auto Gacha")
+local GachaSelect = Tabs.Hatch:AddDropdown("SelectedGacha", {
+    Title = "Selecionar Power",
+    Values = {"SaiyanPower (W1)", "DragonPower (W1)", "FruitPower (W2)", "GrimoiresPower (W3)", "DemonPower (W3)", "BreathingPower (W4)"},
+    Default = "SaiyanPower (W1)",
+})
+local ToggleGacha = Tabs.Hatch:AddToggle("AutoGachaToggle", { Title = "Gacha Turbo", Default = false })
 
+Tabs.Hatch:AddSection("Auto Star")
+local StarSelect = Tabs.Hatch:AddDropdown("SelectedStar", {
+    Title = "Selecionar Star",
+    Values = {"Dragon Ball (W1)", "One Piece (W2)", "Black Clover (W3)", "Demon Slayer (W4)"},
+    Default = "Dragon Ball (W1)",
+})
+local ToggleStar = Tabs.Hatch:AddToggle("AutoStarToggle", { Title = "Star Turbo (x6)", Default = false })
+
+-- === ABA: AUTO GAMEMODES (SEÇÕES SEPARADAS) ===
 Tabs.Gamemodes:AddSection("Entrar nos Modos")
 local ModeSelect = Tabs.Gamemodes:AddDropdown("SelectedMode", {
     Title = "Escolher Modo",
@@ -57,24 +73,19 @@ local ToggleWisteria = Tabs.Gamemodes:AddToggle("FarmWisteria", { Title = "Farm 
 local ToggleTower = Tabs.Gamemodes:AddToggle("FarmTower", { Title = "Farm Tower (Raid1)", Default = false })
 
 Tabs.Gamemodes:AddSection("Auto Leave (Kitar)")
-local ToggleLeave = Tabs.Gamemodes:AddToggle("AutoLeaveToggle", { 
-    Title = "Ativar Auto Leave", 
-    Default = false 
-})
+local ToggleLeave = Tabs.Gamemodes:AddToggle("AutoLeaveToggle", { Title = "Ativar Auto Leave", Default = false })
 
 local WaveInput = Tabs.Gamemodes:AddInput("WaveInputBox", {
     Title = "Digitar Wave para Sair:",
     Default = "10",
     NumericOnly = true,
     Finished = true,
-    Callback = function(Value)
-        TargetWaveInput = tonumber(Value) or 0
-    end
+    Callback = function(Value) TargetWaveInput = tonumber(Value) or 0 end
 })
 
 -- === LOOPS DE EXECUÇÃO ===
 
--- AUTO FARM PRINCIPAL (0.1s)
+-- LOOP AUTO FARM MOBS (0.1s)
 task.spawn(function()
     while true do
         if Options.AutoFarmToggle and Options.AutoFarmToggle.Value then
@@ -99,24 +110,46 @@ task.spawn(function()
     end
 end)
 
--- AUTO LEAVE (KITAR)
+-- LOOP AUTO LEAVE (KITAR)
 task.spawn(function()
     while true do
         if Options.AutoLeaveToggle and Options.AutoLeaveToggle.Value then
             pcall(function()
                 local tower = workspace:FindFirstChild("TowerRaid") and workspace.TowerRaid:FindFirstChild("Raid1")
                 local wisteria = workspace:FindFirstChild("WisteriaRaid") and (workspace.WisteriaRaid:FindFirstChild("Raid1") or workspace.WisteriaRaid:FindFirstChild("Raid8"))
-                
-                local waveObj = (tower and tower:FindFirstChild("Wave")) 
-                             or (wisteria and wisteria:FindFirstChild("Wave"))
-                             or game:GetService("ReplicatedStorage"):FindFirstChild("CurrentWave")
-
+                local waveObj = (tower and tower:FindFirstChild("Wave")) or (wisteria and wisteria:FindFirstChild("Wave")) or game:GetService("ReplicatedStorage"):FindFirstChild("CurrentWave")
                 if waveObj and tonumber(waveObj.Value) >= TargetWaveInput then
                     game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer)
                 end
             end)
         end
         task.wait(2)
+    end
+end)
+
+-- AUTO GACHA & STAR TURBO (0.01s)
+task.spawn(function()
+    while true do
+        if Options.AutoGachaToggle and Options.AutoGachaToggle.Value then
+            pcall(function()
+                local s = Options.SelectedGacha.Value
+                local r = game:GetService("ReplicatedStorage"):WaitForChild("Remotes")
+                if s == "SaiyanPower (W1)" then r:WaitForChild("RollSaiyanPower"):FireServer()
+                elseif s == "DragonPower (W1)" then r:WaitForChild("RollDragonBallPower"):FireServer()
+                elseif s == "FruitPower (W2)" then r:WaitForChild("RollFruitPower"):FireServer()
+                elseif s == "GrimoiresPower (W3)" then r:WaitForChild("RollGrimoiresPower"):FireServer()
+                elseif s == "DemonPower (W3)" then r:WaitForChild("RollDemonPower"):FireServer()
+                elseif s == "BreathingPower (W4)" then r:WaitForChild("RollBreathingPower"):FireServer() end
+            end)
+        end
+        if Options.AutoStarToggle and Options.AutoStarToggle.Value then
+            pcall(function()
+                local s = Options.SelectedStar.Value
+                local id = (s == "One Piece (W2)" and "Star2") or (s == "Black Clover (W3)" and "Star3") or (s == "Demon Slayer (W4)" and "Star4") or "Star1"
+                game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Eggs"):WaitForChild("Hatch"):InvokeServer(id, 6)
+            end)
+        end
+        task.wait(0.01)
     end
 end)
 
@@ -130,7 +163,7 @@ task.spawn(function()
     end
 end)
 
--- LÓGICA DROPDOWN MOBS
+-- DROPDOWN DINÂMICO DE MOBS
 MapSelect:OnChanged(function(Value)
     local worldName = Value:gsub(" ", "")
     local world = workspace:FindFirstChild(worldName)
@@ -143,16 +176,5 @@ MapSelect:OnChanged(function(Value)
     EnemySelect:SetValues(#list > 0 and list or {"Nenhum Mob"})
 end)
 
--- FARM RAID/TOWER (0.1s)
-task.spawn(function()
-    while true do
-        if Options.FarmWisteria and Options.FarmWisteria.Value then
-            -- Lógica de Farm Wisteria simplificada
-            task.wait(0.1)
-        end
-        task.wait()
-    end
-end)
-
 Window:SelectTab(1)
-Fluent:Notify({Title = "Zeon Hub", Content = "Script Restaurado com World 1-4!", Duration = 5})
+Fluent:Notify({Title = "Zeon Hub", Content = "Script Completo Restaurado!", Duration = 5})
