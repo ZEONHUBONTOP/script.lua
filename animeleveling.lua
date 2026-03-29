@@ -20,6 +20,9 @@ local Tabs = {
 
 local Options = Fluent.Options
 
+-- === VARIÁVEL DE CONTROLE (VALOR DIGITADO) ===
+local TargetWaveInput = 10
+
 -- === CONFIGURAÇÃO WHITE SCREEN ===
 local WhiteScreenUI = Instance.new("ScreenGui")
 local WhiteFrame = Instance.new("Frame")
@@ -90,32 +93,20 @@ local ToggleTower = Tabs.Gamemodes:AddToggle("FarmTower", { Title = "Farm Tower 
 Tabs.Gamemodes:AddSection("Auto Leave (Kitar)")
 local ToggleLeave = Tabs.Gamemodes:AddToggle("AutoLeaveToggle", { 
     Title = "Ativar Auto Leave", 
-    Default = false,
-    Description = "Faz Rejoin automático ao atingir a Wave"
+    Default = false 
 })
 
-local TargetWave = Tabs.Gamemodes:AddSlider("TargetWaveValue", {
-    Title = "Kitar na Wave:",
-    Default = 10,
-    Min = 1,
-    Max = 1000,
-    Rounding = 0
-})
-
--- === ABA: SETTINGS ===
-Tabs.Settings:AddSection("Performance")
-Tabs.Settings:AddButton({
-    Title = "FPS Boost (Mapa Cinza)",
-    Callback = function()
-        for _, v in pairs(game:GetDescendants()) do
-            if v:IsA("Part") or v:IsA("Union") or v:IsA("MeshPart") then
-                v.Material = "Plastic"; v.Color = Color3.fromRGB(163, 162, 165); v.Reflectance = 0
-            elseif v:IsA("Decal") or v:IsA("Texture") then v.Transparency = 1 end
-        end
+-- CAMPO DE NÚMERO (INPUT)
+local WaveInput = Tabs.Gamemodes:AddInput("WaveInputBox", {
+    Title = "Digitar Wave para Sair:",
+    Default = "10",
+    Placeholder = "Digite a Wave (ex: 15)",
+    NumericOnly = true,
+    Finished = true,
+    Callback = function(Value)
+        TargetWaveInput = tonumber(Value) or 0
     end
 })
-local ToggleWhite = Tabs.Settings:AddToggle("WhiteScreenToggle", { Title = "White Screen", Default = false })
-ToggleWhite:OnChanged(function() WhiteFrame.Visible = Options.WhiteScreenToggle.Value end)
 
 -- === LOOPS DE EXECUÇÃO ===
 
@@ -134,7 +125,7 @@ task.spawn(function()
     end
 end)
 
--- Loop Auto Leave (Checagem a cada 2s)
+-- Loop Auto Leave (Checa o número digitado)
 task.spawn(function()
     while true do
         if Options.AutoLeaveToggle and Options.AutoLeaveToggle.Value then
@@ -146,8 +137,8 @@ task.spawn(function()
                              or (wisteria and wisteria:FindFirstChild("Wave"))
                              or game:GetService("ReplicatedStorage"):FindFirstChild("CurrentWave")
 
-                if waveObj and tonumber(waveObj.Value) >= Options.TargetWaveValue.Value then
-                    Fluent:Notify({Title = "ZEON HUB", Content = "Meta Atingida! Wave: "..tostring(waveObj.Value), Duration = 5})
+                if waveObj and tonumber(waveObj.Value) >= TargetWaveInput then
+                    Fluent:Notify({Title = "ZEON HUB", Content = "Meta Atingida! Wave: " .. tostring(waveObj.Value), Duration = 5})
                     task.wait(1)
                     game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer)
                 end
@@ -157,7 +148,7 @@ task.spawn(function()
     end
 end)
 
--- Loop Farm Wisteria (0.1s)
+-- Farm Wisteria Raid (0.1s)
 task.spawn(function()
     while true do
         if Options.FarmWisteria and Options.FarmWisteria.Value then
@@ -178,7 +169,7 @@ task.spawn(function()
     end
 end)
 
--- Loop Farm Tower (0.1s)
+-- Farm Tower Easy (0.1s)
 task.spawn(function()
     while true do
         if Options.FarmTower and Options.FarmTower.Value then
@@ -196,16 +187,6 @@ task.spawn(function()
             end)
         end
         task.wait()
-    end
-end)
-
--- Loop Auto Click (0.1s)
-task.spawn(function()
-    while true do
-        if Options.AutoClickToggle and Options.AutoClickToggle.Value then
-            pcall(function() game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Clicked"):FireServer() end)
-        end
-        task.wait(0.1)
     end
 end)
 
@@ -235,7 +216,7 @@ task.spawn(function()
     end
 end)
 
--- Inicialização Dropdown Mobs
+-- Dropdown Logic (Mundos)
 MapSelect:OnChanged(function()
     local worldPath = workspace:FindFirstChild(Options.SelectedMap.Value:gsub(" ", ""))
     local list = {}
@@ -248,4 +229,4 @@ MapSelect:OnChanged(function()
 end)
 
 Window:SelectTab(1)
-Fluent:Notify({Title = "Zeo Hub", Content = "Script Completo e Organizado!", Duration = 5})
+Fluent:Notify({Title = "Zeo Hub", Content = "Script Completo com Input Numérico!", Duration = 5})
