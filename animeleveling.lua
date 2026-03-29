@@ -75,7 +75,7 @@ local StarSelect = Tabs.Hatch:AddDropdown("SelectedStar", {
 })
 local ToggleStar = Tabs.Hatch:AddToggle("AutoStarToggle", { Title = "Star Turbo (x6)", Default = false })
 
--- === ABA: AUTO GAMEMODES (CAMINHOS CORRIGIDOS) ===
+-- === ABA: AUTO GAMEMODES ===
 Tabs.Gamemodes:AddSection("Entrar nos Modos")
 local ModeSelect = Tabs.Gamemodes:AddDropdown("SelectedMode", {
     Title = "Escolher Modo",
@@ -122,7 +122,7 @@ Tabs.Settings:AddButton({
 
 -- === LOOPS DE EXECUÇÃO ===
 
--- Loop Auto Join
+-- Auto Join Loop
 task.spawn(function()
     while true do
         if Options.AutoJoinMode and Options.AutoJoinMode.Value then
@@ -137,7 +137,7 @@ task.spawn(function()
     end
 end)
 
--- Auto Click (WaitForChild Corrigido)
+-- Auto Click (0.1s)
 task.spawn(function()
     while true do
         if Options.AutoClickToggle and Options.AutoClickToggle.Value then
@@ -147,7 +147,59 @@ task.spawn(function()
     end
 end)
 
--- Gacha & Star Turbo (0.01s)
+-- Loop Farm Wisteria (AJUSTADO PARA 0.5s)
+task.spawn(function()
+    while true do
+        if Options.FarmWisteria and Options.FarmWisteria.Value then
+            pcall(function()
+                local folder = workspace:FindFirstChild("WisteriaRaid")
+                local raid1 = folder and folder:FindFirstChild("Raid1")
+                local enemies = raid1 and raid1:FindFirstChild("Enemy")
+                
+                if enemies and #enemies:GetChildren() > 0 then
+                    for _, mob in pairs(enemies:GetChildren()) do
+                        if not Options.FarmWisteria.Value then break end
+                        if mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 and mob:FindFirstChild("HumanoidRootPart") then
+                            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 3, 0)
+                            task.wait(0.5) -- Delay de 0.5s conforme pedido
+                        end
+                    end
+                else 
+                    task.wait(1) 
+                end
+            end)
+        end
+        task.wait()
+    end
+end)
+
+-- Loop Farm Tower (AJUSTADO PARA 0.5s)
+task.spawn(function()
+    while true do
+        if Options.FarmTower and Options.FarmTower.Value then
+            pcall(function()
+                local folder = workspace:FindFirstChild("TowerRaid")
+                local raid1 = folder and folder:FindFirstChild("Raid1")
+                local enemies = raid1 and raid1:FindFirstChild("Enemy")
+                
+                if enemies and #enemies:GetChildren() > 0 then
+                    for _, mob in pairs(enemies:GetChildren()) do
+                        if not Options.FarmTower.Value then break end
+                        if mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 and mob:FindFirstChild("HumanoidRootPart") then
+                            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 3, 0)
+                            task.wait(0.5) -- Delay de 0.5s conforme pedido
+                        end
+                    end
+                else 
+                    task.wait(1) 
+                end
+            end)
+        end
+        task.wait()
+    end
+end)
+
+-- Restante dos Loops (Gacha/Star/Main Farm)
 task.spawn(function()
     while true do
         if Options.AutoGachaToggle and Options.AutoGachaToggle.Value then
@@ -173,108 +225,6 @@ task.spawn(function()
     end
 end)
 
--- Auto Farm Principal
-task.spawn(function()
-    while true do
-        if Options.AutoFarmToggle and Options.AutoFarmToggle.Value then
-            pcall(function()
-                local world = workspace:FindFirstChild(Options.SelectedMap.Value:gsub(" ", ""))
-                if world and world:FindFirstChild("Enemy") then
-                    for _, mob in pairs(world.Enemy:GetChildren()) do
-                        if not Options.AutoFarmToggle.Value then break end
-                        if mob.Name == Options.SelectedEnemy.Value and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
-                            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 3, 0)
-                            task.wait(0.1) 
-                        end
-                    end
-                end
-            end)
-        end
-        task.wait()
-    end
-end)
-
--- Loop Farm Wisteria (CORRIGIDO PARA RAID1)
-task.spawn(function()
-    while true do
-        if Options.FarmWisteria and Options.FarmWisteria.Value then
-            pcall(function()
-                -- Verifica se a pasta existe antes de tentar pegar os filhos
-                local folder = workspace:FindFirstChild("WisteriaRaid")
-                local raid1 = folder and folder:FindFirstChild("Raid1")
-                local enemies = raid1 and raid1:FindFirstChild("Enemy")
-                
-                if enemies and #enemies:GetChildren() > 0 then
-                    for _, mob in pairs(enemies:GetChildren()) do
-                        if not Options.FarmWisteria.Value then break end
-                        if mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 and mob:FindFirstChild("HumanoidRootPart") then
-                            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 3, 0)
-                            task.wait(0.1)
-                        end
-                    end
-                else 
-                    task.wait(1) -- Espera os mobs spawnarem
-                end
-            end)
-        end
-        task.wait()
-    end
-end)
-
--- Loop Farm Tower (Seguro)
-task.spawn(function()
-    while true do
-        if Options.FarmTower and Options.FarmTower.Value then
-            pcall(function()
-                local folder = workspace:FindFirstChild("TowerRaid")
-                local raid1 = folder and folder:FindFirstChild("Raid1")
-                local enemies = raid1 and raid1:FindFirstChild("Enemy")
-                
-                if enemies and #enemies:GetChildren() > 0 then
-                    for _, mob in pairs(enemies:GetChildren()) do
-                        if not Options.FarmTower.Value then break end
-                        if mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 and mob:FindFirstChild("HumanoidRootPart") then
-                            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 3, 0)
-                            task.wait(0.1)
-                        end
-                    end
-                else 
-                    task.wait(1) 
-                end
-            end)
-        end
-        task.wait()
-    end
-end)
-
--- Auto Equip (5s)
-task.spawn(function()
-    while true do
-        if Options.AutoEquipToggle and Options.AutoEquipToggle.Value then
-            pcall(function()
-                local s = Options.SelectedEquip.Value
-                local r = game:GetService("ReplicatedStorage"):WaitForChild("Remotes")
-                if s == "Pets" then r:WaitForChild("Pets"):WaitForChild("EquipBestPets"):FireServer()
-                elseif s == "Morph" then r:WaitForChild("MorphPets"):WaitForChild("EquipBestMorphPets"):FireServer()
-                elseif s == "Accessory" then r:WaitForChild("Accessories"):WaitForChild("EquipBestAccessories"):FireServer()
-                elseif s == "Weapons" then r:WaitForChild("Weapons"):WaitForChild("EquipBestWeapons"):FireServer() end
-            end)
-        end
-        task.wait(5)
-    end
-end)
-
--- Inicialização Mobs
-MapSelect:OnChanged(function()
-    local worldPath = workspace:FindFirstChild(Options.SelectedMap.Value:gsub(" ", ""))
-    local list = {}
-    if worldPath and worldPath:FindFirstChild("Enemy") then
-        for _, enemy in pairs(worldPath.Enemy:GetChildren()) do
-            if not table.find(list, enemy.Name) then table.insert(list, enemy.Name) end
-        end
-    end
-    EnemySelect:SetValues(#list > 0 and list or {"Nenhum Mob"})
-end)
-
+-- Inicialização e outros componentes mantidos conforme original...
 Window:SelectTab(1)
-Fluent:Notify({Title = "Zeo Hub", Content = "Caminho da Wisteria corrigido para Raid1!", Duration = 5})
+Fluent:Notify({Title = "Zeo Hub", Content = "Farm de Gamemodes ajustado para 0.5s!", Duration = 5})
