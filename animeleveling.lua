@@ -1,180 +1,123 @@
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
 local Window = Fluent:CreateWindow({
-    Title = "Zeo Hub",
-    SubTitle = "by ZEON TEAM",
-    TabWidth = 120, 
-    Size = UDim2.fromOffset(400, 300), 
-    Acrylic = true, 
-    Theme = "Dark",
-    MinimizeKey = Enum.KeyCode.RightControl
+    Title = "ZeoHub", -- Título atualizado
+    SubTitle = "By Zeo Team", -- Subtítulo atualizado
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 460),
+    Acrylic = true,
+    Theme = "Dark"
 })
 
 local Tabs = {
-    Main = Window:AddTab({ Title = "Auto Farm", Icon = "target" }),
-    Player = Window:AddTab({ Title = "Player", Icon = "swords" }),
-    Hatch = Window:AddTab({ Title = "Hatch", Icon = "star" }),
-    Gamemodes = Window:AddTab({ Title = "Auto Gamemodes", Icon = "gamepad" }),
-    Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
+    Main = Window:AddTab({ Title = "Auto Farm", Icon = "zap" }),
+    Player = Window:AddTab({ Title = "Player", Icon = "user" }),
+    Stars = Window:AddTab({ Title = "Auto Star", Icon = "star" })
 }
 
 local Options = Fluent.Options
+local selectedMob = ""
 
--- === VARIÁVEIS DE CONTROLE ===
-local TargetWaveInput = 10
+-- Função para listar Mobs do Mundo 1
+local function getMobList()
+    local list = {}
+    local enemiesFolder = workspace:FindFirstChild("Worlds") and workspace.Worlds:FindFirstChild("1") and workspace.Worlds["1"]:FindFirstChild("Enemies")
+    if enemiesFolder then
+        for _, mob in pairs(enemiesFolder:GetChildren()) do
+            if not table.find(list, mob.Name) then
+                table.insert(list, mob.Name)
+            end
+        end
+    end
+    return list
+end
 
--- === ABA: AUTO FARM (MAIN) ===
-local MapSelect = Tabs.Main:AddDropdown("SelectedMap", {
-    Title = "Mundo",
-    Values = {"World 1", "World 2", "World 3", "World 4"},
-    Default = "World 1",
-})
+----------------------------------------------------------------
+-- ABA: AUTO FARM (MOBS - TELEPORT LOOP)
+----------------------------------------------------------------
+Tabs.Main:AddParagraph({ Title = "Farm de Inimigos", Content = "Teleporta para todos os mobs com o nome escolhido (0.1s)." })
 
-local EnemySelect = Tabs.Main:AddDropdown("SelectedEnemy", {
+local MobDropdown = Tabs.Main:AddDropdown("MobDropdown", {
     Title = "Selecionar Mob",
-    Values = {"Carregando..."},
-    Default = "Carregando...",
+    Values = getMobList(),
+    Multi = false,
+    Default = nil,
 })
 
-local ToggleFarm = Tabs.Main:AddToggle("AutoFarmToggle", { Title = "Ativar Auto Farm", Default = false })
+MobDropdown:OnChanged(function(Value)
+    selectedMob = Value
+end)
 
--- === ABA: PLAYER ===
-Tabs.Player:AddSection("Combat")
-local ToggleClick = Tabs.Player:AddToggle("AutoClickToggle", { Title = "Auto Click", Default = false })
-
--- === ABA: HATCH (VOLTOU) ===
-Tabs.Hatch:AddSection("Auto Gacha")
-local GachaSelect = Tabs.Hatch:AddDropdown("SelectedGacha", {
-    Title = "Selecionar Power",
-    Values = {"SaiyanPower (W1)", "DragonPower (W1)", "FruitPower (W2)", "GrimoiresPower (W3)", "DemonPower (W3)", "BreathingPower (W4)"},
-    Default = "SaiyanPower (W1)",
-})
-local ToggleGacha = Tabs.Hatch:AddToggle("AutoGachaToggle", { Title = "Gacha Turbo", Default = false })
-
-Tabs.Hatch:AddSection("Auto Star")
-local StarSelect = Tabs.Hatch:AddDropdown("SelectedStar", {
-    Title = "Selecionar Star",
-    Values = {"Dragon Ball (W1)", "One Piece (W2)", "Black Clover (W3)", "Demon Slayer (W4)"},
-    Default = "Dragon Ball (W1)",
-})
-local ToggleStar = Tabs.Hatch:AddToggle("AutoStarToggle", { Title = "Star Turbo (x6)", Default = false })
-
--- === ABA: AUTO GAMEMODES (SEÇÕES SEPARADAS) ===
-Tabs.Gamemodes:AddSection("Entrar nos Modos")
-local ModeSelect = Tabs.Gamemodes:AddDropdown("SelectedMode", {
-    Title = "Escolher Modo",
-    Values = {"Wisteria Raid (W4)", "Tower Easy"},
-    Default = "Wisteria Raid (W4)",
-})
-local ToggleJoin = Tabs.Gamemodes:AddToggle("AutoJoinMode", { Title = "Auto Entrar (Loop)", Default = false })
-
-Tabs.Gamemodes:AddSection("Auto Farm")
-local ToggleWisteria = Tabs.Gamemodes:AddToggle("FarmWisteria", { Title = "Farm Wisteria (Raid1)", Default = false })
-local ToggleTower = Tabs.Gamemodes:AddToggle("FarmTower", { Title = "Farm Tower (Raid1)", Default = false })
-
-Tabs.Gamemodes:AddSection("Auto Leave (Kitar)")
-local ToggleLeave = Tabs.Gamemodes:AddToggle("AutoLeaveToggle", { Title = "Ativar Auto Leave", Default = false })
-
-local WaveInput = Tabs.Gamemodes:AddInput("WaveInputBox", {
-    Title = "Digitar Wave para Sair:",
-    Default = "10",
-    NumericOnly = true,
-    Finished = true,
-    Callback = function(Value) TargetWaveInput = tonumber(Value) or 0 end
+Tabs.Main:AddButton({
+    Title = "Refresh Mobs",
+    Description = "Atualiza a lista de inimigos",
+    Callback = function()
+        MobDropdown:SetValues(getMobList())
+    end
 })
 
--- === LOOPS DE EXECUÇÃO ===
+local FarmMobToggle = Tabs.Main:AddToggle("FarmMobToggle", {Title = "Ativar Auto Farm Mob (0.1s)", Default = false })
 
--- LOOP AUTO FARM MOBS (0.1s)
-task.spawn(function()
-    while true do
-        if Options.AutoFarmToggle and Options.AutoFarmToggle.Value then
+FarmMobToggle:OnChanged(function()
+    task.spawn(function()
+        while Options.FarmMobToggle.Value do
             pcall(function()
-                local worldName = Options.SelectedMap.Value:gsub(" ", "")
-                local world = workspace:FindFirstChild(worldName)
-                if world and world:FindFirstChild("Enemy") then
-                    for _, mob in pairs(world.Enemy:GetChildren()) do
-                        if not Options.AutoFarmToggle.Value then break end
-                        if mob.Name == Options.SelectedEnemy.Value and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
-                            local hrp = mob:FindFirstChild("HumanoidRootPart")
-                            if hrp then
-                                game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = hrp.CFrame * CFrame.new(0, 3, 0)
-                                task.wait(0.1)
-                            end
+                if selectedMob ~= "" then
+                    local enemiesFolder = workspace.Worlds["1"].Enemies
+                    -- Loop por todos os filhos da pasta de inimigos
+                    for _, mob in pairs(enemiesFolder:GetChildren()) do
+                        -- Se o Toggle for desligado durante o loop, para imediatamente
+                        if not Options.FarmMobToggle.Value then break end
+                        
+                        if mob.Name == selectedMob and mob:FindFirstChild("HumanoidRootPart") then
+                            -- Teleporta para o mob atual da lista
+                            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
+                            task.wait(0.1) -- Delay solicitado
                         end
                     end
                 end
             end)
+            task.wait() -- Pequena pausa para não travar o script se não houver mobs
         end
-        task.wait()
-    end
+    end)
 end)
 
--- LOOP AUTO LEAVE (KITAR)
-task.spawn(function()
-    while true do
-        if Options.AutoLeaveToggle and Options.AutoLeaveToggle.Value then
-            pcall(function()
-                local tower = workspace:FindFirstChild("TowerRaid") and workspace.TowerRaid:FindFirstChild("Raid1")
-                local wisteria = workspace:FindFirstChild("WisteriaRaid") and (workspace.WisteriaRaid:FindFirstChild("Raid1") or workspace.WisteriaRaid:FindFirstChild("Raid8"))
-                local waveObj = (tower and tower:FindFirstChild("Wave")) or (wisteria and wisteria:FindFirstChild("Wave")) or game:GetService("ReplicatedStorage"):FindFirstChild("CurrentWave")
-                if waveObj and tonumber(waveObj.Value) >= TargetWaveInput then
-                    game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer)
-                end
-            end)
+----------------------------------------------------------------
+-- ABA: PLAYER (SPEED, JUMP & CLICKER)
+----------------------------------------------------------------
+Tabs.Player:AddSlider("WalkSpeed", { Title = "Velocidade", Default = 16, Min = 16, Max = 250, Rounding = 1, Callback = function(v) game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = v end })
+Tabs.Player:AddSlider("JumpPower", { Title = "Pulo", Default = 50, Min = 50, Max = 300, Rounding = 1, Callback = function(v) game.Players.LocalPlayer.Character.Humanoid.JumpPower = v end })
+
+Tabs.Player:AddDivider()
+
+local ClickToggle = Tabs.Player:AddToggle("ClickToggle", {Title = "Auto Click Turbo", Default = false })
+ClickToggle:OnChanged(function()
+    task.spawn(function()
+        while Options.ClickToggle.Value do
+            local event = game:GetService("ReplicatedStorage"):WaitForChild("simpledeev_Framework"):WaitForChild("Library"):WaitForChild("Network"):WaitForChild("Events"):FindFirstChild("Click")
+            if event then event:FireServer() end
+            task.wait()
         end
-        task.wait(2)
-    end
+    end)
 end)
 
--- AUTO GACHA & STAR TURBO (0.01s)
-task.spawn(function()
-    while true do
-        if Options.AutoGachaToggle and Options.AutoGachaToggle.Value then
-            pcall(function()
-                local s = Options.SelectedGacha.Value
-                local r = game:GetService("ReplicatedStorage"):WaitForChild("Remotes")
-                if s == "SaiyanPower (W1)" then r:WaitForChild("RollSaiyanPower"):FireServer()
-                elseif s == "DragonPower (W1)" then r:WaitForChild("RollDragonBallPower"):FireServer()
-                elseif s == "FruitPower (W2)" then r:WaitForChild("RollFruitPower"):FireServer()
-                elseif s == "GrimoiresPower (W3)" then r:WaitForChild("RollGrimoiresPower"):FireServer()
-                elseif s == "DemonPower (W3)" then r:WaitForChild("RollDemonPower"):FireServer()
-                elseif s == "BreathingPower (W4)" then r:WaitForChild("RollBreathingPower"):FireServer() end
-            end)
-        end
-        if Options.AutoStarToggle and Options.AutoStarToggle.Value then
-            pcall(function()
-                local s = Options.SelectedStar.Value
-                local id = (s == "One Piece (W2)" and "Star2") or (s == "Black Clover (W3)" and "Star3") or (s == "Demon Slayer (W4)" and "Star4") or "Star1"
-                game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Eggs"):WaitForChild("Hatch"):InvokeServer(id, 6)
-            end)
-        end
-        task.wait(0.01)
-    end
-end)
+----------------------------------------------------------------
+-- ABA: AUTO STAR (WORLD 1)
+----------------------------------------------------------------
+Tabs.Stars:AddParagraph({ Title = "Configuração do Mundo", Content = "Atualmente configurado apenas para: **World1**" })
 
--- AUTO CLICK (0.1s)
-task.spawn(function()
-    while true do
-        if Options.AutoClickToggle and Options.AutoClickToggle.Value then
-            pcall(function() game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Clicked"):FireServer() end)
-        end
-        task.wait(0.1)
-    end
-end)
+local EggToggle = Tabs.Stars:AddToggle("EggToggle", {Title = "Auto Open Eggs World 1 (0.01s)", Default = false })
 
--- DROPDOWN DINÂMICO DE MOBS
-MapSelect:OnChanged(function(Value)
-    local worldName = Value:gsub(" ", "")
-    local world = workspace:FindFirstChild(worldName)
-    local list = {}
-    if world and world:FindFirstChild("Enemy") then
-        for _, enemy in pairs(world.Enemy:GetChildren()) do
-            if not table.find(list, enemy.Name) then table.insert(list, enemy.Name) end
+EggToggle:OnChanged(function()
+    task.spawn(function()
+        while Options.EggToggle.Value do
+            local event = game:GetService("ReplicatedStorage"):WaitForChild("simpledeev_Framework"):WaitForChild("Library"):WaitForChild("Network"):WaitForChild("Events"):FindFirstChild("OpenEgg")
+            if event then 
+                event:FireServer("World1") 
+            end
+            task.wait(0.01)
         end
-    end
-    EnemySelect:SetValues(#list > 0 and list or {"Nenhum Mob"})
+    end)
 end)
 
 Window:SelectTab(1)
-Fluent:Notify({Title = "Zeon Hub", Content = "Script Completo Restaurado!", Duration = 5})
