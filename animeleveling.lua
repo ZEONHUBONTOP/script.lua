@@ -165,11 +165,11 @@ task.spawn(function()
                         end
                     end
                 else 
-                    task.wait(1) 
+                    task.wait(5) 
                 end
             end)
         end
-        task.wait()
+        task.wait(1)
     end
 end)
 
