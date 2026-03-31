@@ -1,7 +1,7 @@
--- PEGAR NOME DO JOGO
+-- GAME NAME
 local GameName = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name
 
--- LOAD UI
+-- UI
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 local Remotes = game:GetService("ReplicatedStorage"):WaitForChild("Remotes")
 
@@ -15,7 +15,7 @@ local Window = Fluent:CreateWindow({
     MinimizeKey = Enum.KeyCode.RightControl
 })
 
--- ABAS
+-- TABS
 local Tabs = {
     Main = Window:AddTab({ Title = "Main", Icon = "home" }),
     AutoFarm = Window:AddTab({ Title = "Auto Farm", Icon = "swords" }),
@@ -27,7 +27,7 @@ local Tabs = {
 local SavedCFrame = nil
 _G.TargetWave = 0
 
--- FUNÇÃO MULTI SELECT
+-- MULTI SELECT
 local function IsSelected(selected, name)
     if typeof(selected) == "table" then
         if table.find(selected, name) then return true end
@@ -36,9 +36,7 @@ local function IsSelected(selected, name)
     return false
 end
 
--- =========================
--- MAIN
--- =========================
+-- ================= MAIN =================
 Tabs.Main:AddSection("Informações")
 
 Tabs.Main:AddParagraph({
@@ -48,12 +46,10 @@ Tabs.Main:AddParagraph({
 
 Tabs.Main:AddParagraph({
     Title = "Script",
-    Content = "Dono: ZEON TEAM\nVersão: v1.0\nStatus: Online\nAtualizado: 31/03/2026"
+    Content = "Dono: ZEON TEAM\nVersão: FINAL\nStatus: Online\nAtualizado: 31/03/2026"
 })
 
--- =========================
--- PLAYER
--- =========================
+-- ================= PLAYER =================
 Tabs.Player:AddSection("Ações")
 
 Tabs.Player:AddToggle("Click",{Title="Auto Click",Icon="mouse"}):OnChanged(function(v)
@@ -93,9 +89,7 @@ Tabs.Player:AddToggle("Chest",{Title="Auto Chest",Icon="treasure-chest"}):OnChan
     end)
 end)
 
--- =========================
 -- EQUIP BEST
--- =========================
 Tabs.Player:AddSection("Equip Best")
 
 local function AutoEquip(toggle, path, remote)
@@ -129,9 +123,7 @@ Tabs.Player:AddToggle("Weapons",{Title="Auto Best Weapons",Icon="sword"}):OnChan
     if v then AutoEquip("Weapons","Weapons","EquipBestWeapons") end
 end)
 
--- =========================
--- AUTO FARM (VARREDURA)
--- =========================
+-- ================= AUTO FARM =================
 Tabs.AutoFarm:AddSection("Configuração")
 
 local WorldSelect = Tabs.AutoFarm:AddDropdown("WorldSelect",{
@@ -165,42 +157,50 @@ end
 WorldSelect:OnChanged(UpdateMob)
 task.spawn(UpdateMob)
 
-Tabs.AutoFarm:AddToggle("Farm",{Title="Auto Farm (Sweep)",Icon="zap"}):OnChanged(function(v)
+-- ULTRA SWEEP FIX
+Tabs.AutoFarm:AddToggle("Farm",{Title="Auto Farm Ultra",Icon="zap"}):OnChanged(function(v)
     _G.Farm=v
-    task.spawn(function()
-        while _G.Farm do
-            local p=game.Players.LocalPlayer
-            local hrp=p.Character and p.Character:FindFirstChild("HumanoidRootPart")
 
-            local world=workspace:FindFirstChild(WorldSelect.Value:gsub(" ",""))
-            local enemies=world and world:FindFirstChild("Enemy")
+    task.spawn(function()
+        local index = 1
+
+        while _G.Farm do
+            local p = game.Players.LocalPlayer
+            local hrp = p.Character and p.Character:FindFirstChild("HumanoidRootPart")
+
+            local world = workspace:FindFirstChild(WorldSelect.Value:gsub(" ",""))
+            local enemies = world and world:FindFirstChild("Enemy")
 
             if hrp and enemies then
+                local mobs = {}
+
                 for _,mob in pairs(enemies:GetChildren()) do
-                    if not _G.Farm then break end
+                    if mob.Name == MobSelect.Value and mob:FindFirstChild("Humanoid") then
+                        table.insert(mobs, mob)
+                    end
+                end
 
-                    if mob.Name==MobSelect.Value and mob:FindFirstChild("Humanoid") then
-                        local target=mob:FindFirstChild("HumanoidRootPart") or mob:FindFirstChild("Base")
-                        if target then
-                            hrp.CFrame=target.CFrame*CFrame.new(0,0,3)
+                if #mobs > 0 then
+                    if index > #mobs then index = 1 end
 
-                            for i=1,2 do
-                                Remotes.Clicked:FireServer()
-                                task.wait(0.05)
-                            end
-                        end
+                    local mob = mobs[index]
+                    index += 1
+
+                    local target = mob:FindFirstChild("HumanoidRootPart") or mob:FindFirstChild("Base")
+
+                    if target then
+                        hrp.CFrame = target.CFrame * CFrame.new(0,0,3)
+                        Remotes.Clicked:FireServer()
                     end
                 end
             end
 
-            task.wait(0.1)
+            task.wait(0.15)
         end
     end)
 end)
 
--- =========================
--- HATCH + GACHA
--- =========================
+-- ================= HATCH =================
 Tabs.Hatch:AddSection("Auto Star")
 
 local EggSelect = Tabs.Hatch:AddDropdown("EggSelect",{
@@ -235,6 +235,7 @@ local GachaSelect = Tabs.Hatch:AddDropdown("GachaSelect",{
         "Fruits Power (W2)",
         "Grimoires Power (W3)",
         "Demon Power (W3)",
+        "Prosperity Power (W3)",
         "Breathing Power (W4)"
     },
     Default="Saiyan Power (W1)"
@@ -252,9 +253,34 @@ Tabs.Hatch:AddToggle("Gacha",{Title="Auto Gacha",Icon="refresh-cw"}):OnChanged(f
     end)
 end)
 
--- =========================
--- RAIDS
--- =========================
+-- SKIP ANIMAÇÃO
+Tabs.Hatch:AddToggle("SkipAnim",{Title="Skip Animação",Icon="fast-forward"}):OnChanged(function(v)
+    _G.SkipAnim = v
+
+    task.spawn(function()
+        while _G.SkipAnim do
+            local player = game.Players.LocalPlayer
+
+            if player:FindFirstChild("PlayerGui") then
+                for _,ui in pairs(player.PlayerGui:GetChildren()) do
+                    if ui.Name:lower():find("egg") or ui.Name:lower():find("roll") then
+                        ui:Destroy()
+                    end
+                end
+            end
+
+            for _,obj in pairs(workspace:GetChildren()) do
+                if obj.Name:lower():find("egg") or obj.Name:lower():find("roll") then
+                    obj:Destroy()
+                end
+            end
+
+            task.wait(0.2)
+        end
+    end)
+end)
+
+-- ================= RAIDS =================
 Tabs.Gamemodes:AddSection("Raids")
 
 local RaidSelect = Tabs.Gamemodes:AddDropdown("RaidSelect",{
@@ -310,15 +336,12 @@ Tabs.Gamemodes:AddToggle("FarmRaid",{Title="Auto Farm Raid",Icon="swords"}):OnCh
                     end
                 end
             end
-
             task.wait(0.1)
         end
     end)
 end)
 
--- =========================
--- CHECKPOINT + AUTO LEAVE
--- =========================
+-- ================= SAVE + LEAVE =================
 Tabs.Gamemodes:AddSection("Checkpoint")
 
 Tabs.Gamemodes:AddButton({
