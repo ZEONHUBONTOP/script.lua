@@ -17,7 +17,6 @@ local Window = Fluent:CreateWindow({
 
 -- TABS
 local Tabs = {
-    Main = Window:AddTab({ Title = "Main", Icon = "home" }),
     AutoFarm = Window:AddTab({ Title = "Auto Farm", Icon = "swords" }),
     Player = Window:AddTab({ Title = "Players", Icon = "user" }),
     Hatch = Window:AddTab({ Title = "Hatch", Icon = "star" }),
