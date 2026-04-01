@@ -180,7 +180,7 @@ local GachaSelect = Tabs.Hatch:AddDropdown("GachaSelect",{
     Values={
         "Saiyan Power (W1)",
         "Dragon Power (W1)",
-        "Fruits Power (W2)",
+        "Fruit Power (W2)",
         "Grimoires Power (W3)",
         "Demon Power (W3)",
         "Prosperity Power (W3)",
@@ -214,7 +214,7 @@ Tabs.Hatch:AddToggle("Skip",{Title="Skip Animação"}):OnChanged(function(v)
             for _,o in pairs(workspace:GetChildren()) do
                 if o.Name:lower():find("egg") or o.Name:lower():find("roll") then o:Destroy() end
             end
-            task.wait(0.2)
+            task.wait(0.01)
         end
     end)
 end)
@@ -275,7 +275,7 @@ Tabs.Gamemodes:AddToggle("FarmRaid",{Title="Auto Farm Raid GOD"}):OnChanged(func
                 else
                     if SavedCFrame then hrp.CFrame=SavedCFrame end
                     repeat
-                        task.wait(0.5)
+                        task.wait(2)
                         local found=false
                         for _,m in pairs(folder:GetChildren()) do
                             if m:FindFirstChild("Humanoid") and m.Humanoid.Health>0 then found=true break end
