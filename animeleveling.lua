@@ -1,9 +1,21 @@
 -- GAME NAME
 local GameName = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name
 
+-- SERVICES
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Remotes = ReplicatedStorage:WaitForChild("Remotes")
+
+local Player = Players.LocalPlayer
+
+-- SAFE CHARACTER
+local function GetHRP()
+    local char = Player.Character or Player.CharacterAdded:Wait()
+    return char:FindFirstChild("HumanoidRootPart")
+end
+
 -- UI
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
-local Remotes = game:GetService("ReplicatedStorage"):WaitForChild("Remotes")
 
 local Window = Fluent:CreateWindow({
     Title = "ZEON HUB",
@@ -29,24 +41,23 @@ local SavedCFrame = nil
 Tabs.AutoFarm:AddSection("Auto Farm")
 
 local WorldSelect = Tabs.AutoFarm:AddDropdown("WorldSelect",{
-    Title="Mundo",
+    Title="Selecionar Mundo",
     Values={"World 1","World 2","World 3","World 4"},
     Default="World 1"
 })
 
 local MobSelect = Tabs.AutoFarm:AddDropdown("MobSelect",{
-    Title="Mob",
+    Title="Selecionar Mob",
     Values={"Carregando..."},
     Default=1
 })
 
 local function UpdateMob()
-    local world = WorldSelect.Value and WorldSelect.Value:gsub(" ","")
-    local folder = workspace:FindFirstChild(world)
-    local enemies = folder and folder:FindFirstChild("Enemy")
+    local world = WorldSelect.Value:gsub(" ","")
+    local enemies = workspace:FindFirstChild(world)
+    enemies = enemies and enemies:FindFirstChild("Enemy")
 
     local list = {}
-
     if enemies then
         for _,m in pairs(enemies:GetChildren()) do
             if not table.find(list,m.Name) then
@@ -59,20 +70,14 @@ local function UpdateMob()
 end
 
 WorldSelect:OnChanged(UpdateMob)
-task.spawn(function()
-    task.wait(1)
-    UpdateMob()
-end)
+task.spawn(function() task.wait(1) UpdateMob() end)
 
-Tabs.AutoFarm:AddToggle("Farm",{Title="Auto Farm World"}):OnChanged(function(v)
+Tabs.AutoFarm:AddToggle("Farm",{Title="Auto Farm"}):OnChanged(function(v)
     _G.Farm=v
-
     if v then
         task.spawn(function()
             while _G.Farm do
-                local p = game.Players.LocalPlayer
-                local hrp = p.Character and p.Character:FindFirstChild("HumanoidRootPart")
-
+                local hrp = GetHRP()
                 local world = workspace:FindFirstChild(WorldSelect.Value:gsub(" ",""))
                 local enemies = world and world:FindFirstChild("Enemy")
 
@@ -80,7 +85,6 @@ Tabs.AutoFarm:AddToggle("Farm",{Title="Auto Farm World"}):OnChanged(function(v)
                     for _,mob in pairs(enemies:GetChildren()) do
                         if mob.Name == MobSelect.Value and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
                             local target = mob:FindFirstChild("HumanoidRootPart") or mob:FindFirstChild("Base")
-
                             if target then
                                 hrp.CFrame = target.CFrame * CFrame.new(0,0,3)
                                 Remotes.Clicked:FireServer()
@@ -89,7 +93,6 @@ Tabs.AutoFarm:AddToggle("Farm",{Title="Auto Farm World"}):OnChanged(function(v)
                         end
                     end
                 end
-
                 task.wait()
             end
         end)
@@ -111,15 +114,14 @@ Tabs.Player:AddToggle("Click",{Title="Auto Click"}):OnChanged(function(v)
     end
 end)
 
--- AUTO CHEST (1H)
+-- 💰 AUTO CHEST (CORRIGIDO)
 Tabs.Player:AddToggle("Chest",{Title="Auto Chest (1h)"}):OnChanged(function(v)
     _G.Chest=v
 
     if v then
         task.spawn(function()
             while _G.Chest do
-                local p = game.Players.LocalPlayer
-                local hrp = p.Character and p.Character:FindFirstChild("HumanoidRootPart")
+                local hrp = GetHRP()
                 local chests = workspace:FindFirstChild("Chests")
 
                 if hrp and chests then
@@ -128,17 +130,21 @@ Tabs.Player:AddToggle("Chest",{Title="Auto Chest (1h)"}):OnChanged(function(v)
                     for _,c in pairs(chests:GetChildren()) do
                         local part = c:IsA("BasePart") and c or c:FindFirstChildWhichIsA("BasePart")
                         if part then
-                            hrp.CFrame = part.CFrame * CFrame.new(0,3,0)
+                            hrp.CFrame = part.CFrame + Vector3.new(0,3,0)
                             firetouchinterest(hrp, part, 0)
                             firetouchinterest(hrp, part, 1)
                             task.wait(0.2)
                         end
                     end
 
-                    hrp.CFrame = old
+                    if SavedCFrame then
+                        hrp.CFrame = SavedCFrame
+                    else
+                        hrp.CFrame = old
+                    end
                 end
 
-                task.wait(3600)
+                task.wait(3600) -- 1 HORA
             end
         end)
     end
@@ -156,41 +162,31 @@ local function AutoEquip(toggle, folder, remote)
             end
             task.wait(3)
         end
-    end
+    end)
 end
 
 Tabs.Player:AddToggle("Pets",{Title="Equip Best Pets"}):OnChanged(function(v)
-    _G.Pets=v
-    if v then AutoEquip("Pets","Pets","EquipBestPets") end
+    _G.Pets=v if v then AutoEquip("Pets","Pets","EquipBestPets") end
 end)
 
 Tabs.Player:AddToggle("Morph",{Title="Equip Best Morph"}):OnChanged(function(v)
-    _G.Morph=v
-    if v then AutoEquip("Morph","MorphPets","EquipBestMorphPets") end
+    _G.Morph=v if v then AutoEquip("Morph","MorphPets","EquipBestMorphPets") end
 end)
 
 Tabs.Player:AddToggle("Acc",{Title="Equip Best Accessory"}):OnChanged(function(v)
-    _G.Acc=v
-    if v then AutoEquip("Acc","Accessories","EquipBestAccessories") end
+    _G.Acc=v if v then AutoEquip("Acc","Accessories","EquipBestAccessories") end
 end)
 
 Tabs.Player:AddToggle("Weapon",{Title="Equip Best Weapons"}):OnChanged(function(v)
-    _G.Weapon=v
-    if v then AutoEquip("Weapon","Weapons","EquipBestWeapons") end
+    _G.Weapon=v if v then AutoEquip("Weapon","Weapons","EquipBestWeapons") end
 end)
 
 -- ================= HATCH =================
-Tabs.Hatch:AddSection("Eggs")
+Tabs.Hatch:AddSection("Hatch")
 
 local EggSelect = Tabs.Hatch:AddDropdown("Egg",{
     Title="Star",
-    Values={
-        "Dragon Ball (W1)",
-        "One Piece (W2)",
-        "Clover Village (W3)",
-        "Demon Village (W4)"
-    },
-    Default="Dragon Ball (W1)"
+    Values={"Dragon Ball (W1)","One Piece (W2)","Clover Village (W3)","Demon Village (W4)"}
 })
 
 Tabs.Hatch:AddToggle("Hatch",{Title="Auto Hatch"}):OnChanged(function(v)
@@ -211,24 +207,22 @@ Tabs.Hatch:AddSection("Gacha")
 local GachaSelect = Tabs.Hatch:AddDropdown("Gacha",{
     Title="Power",
     Values={
-        "DragonBallPower (W1)",
-        "SaiyanPower (W1)",
-        "FruitPower (W2)",
-        "GrimoiresPower (W3)",
-        "ProsperityPower (W3)",
-        "DemonPower (W3)",
-        "BreathingPower (W4)"
-    },
-    Default="DragonBallPower (W1)"
+        "DragonBallPower",
+        "SaiyanPower",
+        "FruitPower",
+        "GrimoiresPower",
+        "ProsperityPower",
+        "DemonPower",
+        "BreathingPower"
+    }
 })
 
-Tabs.Hatch:AddToggle("GachaT",{Title="Auto Gacha"}):OnChanged(function(v)
+Tabs.Hatch:AddToggle("Gacha",{Title="Auto Gacha"}):OnChanged(function(v)
     _G.Gacha=v
     if v then
         task.spawn(function()
             while _G.Gacha do
-                local p = GachaSelect.Value:match("^(%w+)")
-                local r = Remotes:FindFirstChild("Roll"..p)
+                local r = Remotes:FindFirstChild("Roll"..GachaSelect.Value)
                 if r then r:FireServer() end
                 task.wait(0.1)
             end
@@ -237,25 +231,16 @@ Tabs.Hatch:AddToggle("GachaT",{Title="Auto Gacha"}):OnChanged(function(v)
 end)
 
 -- ================= GAMEMODES =================
-Tabs.Gamemodes:AddSection("Save")
-
-Tabs.Gamemodes:AddButton({
-    Title="Save Position",
-    Callback=function()
-        local hrp=game.Players.LocalPlayer.Character.HumanoidRootPart
-        SavedCFrame=hrp.CFrame
-    end
-})
+Tabs.Gamemodes:AddSection("Raids")
 
 local RaidSelect = Tabs.Gamemodes:AddDropdown("Raid",{
-    Title="Raid",
+    Title="Selecionar Raid",
     Values={"WisteriaRaid","TowerRaid"},
     Multi=true,
     Default={"WisteriaRaid"}
 })
 
--- AUTO JOIN
-Tabs.Gamemodes:AddToggle("Join",{Title="Auto Join"}):OnChanged(function(v)
+Tabs.Gamemodes:AddToggle("Join",{Title="Auto Join Raid"}):OnChanged(function(v)
     _G.Join=v
     if v then
         task.spawn(function()
@@ -272,43 +257,31 @@ Tabs.Gamemodes:AddToggle("Join",{Title="Auto Join"}):OnChanged(function(v)
     end
 end)
 
--- AUTO FARM RAID
-Tabs.Gamemodes:AddToggle("RaidFarm",{Title="Auto Farm Raid"}):OnChanged(function(v)
+Tabs.Gamemodes:AddToggle("RaidFarm",{Title="Auto Farm Mobs"}):OnChanged(function(v)
     _G.RaidFarm=v
-
     if v then
         task.spawn(function()
             while _G.RaidFarm do
-                local hrp=game.Players.LocalPlayer.Character.HumanoidRootPart
-                local found=false
+                local hrp = GetHRP()
 
                 for _,raidName in pairs(RaidSelect.Value) do
-                    local raid=workspace:FindFirstChild(raidName)
+                    local raid = workspace:FindFirstChild(raidName)
                     if raid then
-                        local enemies=raid:FindFirstChild("Enemy") or (raid:FindFirstChild("Raid1") and raid.Raid1:FindFirstChild("Enemy"))
+                        local enemies = raid:FindFirstChild("Enemy") or (raid:FindFirstChild("Raid1") and raid.Raid1:FindFirstChild("Enemy"))
 
                         if enemies then
                             for _,mob in pairs(enemies:GetChildren()) do
-                                if mob:FindFirstChild("Humanoid") and mob.Humanoid.Health>0 then
-                                    found=true
-                                    hrp.CFrame=mob.HumanoidRootPart.CFrame*CFrame.new(0,0,3)
-                                    Remotes.Clicked:FireServer()
-                                    task.wait(0.15)
+                                if mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
+                                    local t = mob:FindFirstChild("HumanoidRootPart") or mob:FindFirstChild("Base")
+                                    if t then
+                                        hrp.CFrame = t.CFrame * CFrame.new(0,0,3)
+                                        Remotes.Clicked:FireServer()
+                                        task.wait(0.15)
+                                    end
                                 end
                             end
                         end
                     end
-                end
-
-                if not found then
-                    Remotes.LeaveRaid:FireServer()
-                    task.wait(1)
-
-                    if SavedCFrame then
-                        hrp.CFrame=SavedCFrame
-                    end
-
-                    task.wait(3)
                 end
 
                 task.wait()
@@ -316,5 +289,16 @@ Tabs.Gamemodes:AddToggle("RaidFarm",{Title="Auto Farm Raid"}):OnChanged(function
         end)
     end
 end)
+
+-- SAVE POSITION
+Tabs.Gamemodes:AddSection("Save")
+
+Tabs.Gamemodes:AddButton({
+    Title="Save Position",
+    Callback=function()
+        local hrp = GetHRP()
+        if hrp then SavedCFrame = hrp.CFrame end
+    end
+})
 
 Window:SelectTab(1)
