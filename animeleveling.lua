@@ -213,7 +213,7 @@ local GachaSelect = Tabs.Hatch:AddDropdown("Gacha",{
     Values={
         "DragonBallPower (W1)",
         "SaiyanPower (W1)",
-        "FruitsPower (W2)",
+        "FruitPower (W2)",
         "GrimoiresPower (W3)",
         "ProsperityPower (W3)",
         "DemonPower (W3)",
