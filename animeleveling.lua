@@ -17,7 +17,6 @@ local Window = Fluent:CreateWindow({
 
 -- TABS
 local Tabs = {
-    Main = Window:AddTab({ Title = "Main", Icon = "home" }),
     AutoFarm = Window:AddTab({ Title = "Auto Farm", Icon = "swords" }),
     Player = Window:AddTab({ Title = "Players", Icon = "user" }),
     Hatch = Window:AddTab({ Title = "Hatch", Icon = "star" }),
@@ -38,7 +37,7 @@ end
 -- ================= PLAYER =================
 Tabs.Player:AddSection("Ações")
 
-Tabs.Player:AddToggle("Click",{Title="Auto Click"}):OnChanged(function(v)
+Tabs.Player:AddToggle("Click",{Title="Auto Attack"}):OnChanged(function(v)
     _G.Click=v
     task.spawn(function()
         while _G.Click do
@@ -48,7 +47,7 @@ Tabs.Player:AddToggle("Click",{Title="Auto Click"}):OnChanged(function(v)
     end)
 end)
 
-Tabs.Player:AddToggle("Chest",{Title="Auto Chest"}):OnChanged(function(v)
+Tabs.Player:AddToggle("Chest",{Title="Auto Chest (1h)"}):OnChanged(function(v)
     _G.Chest=v
     task.spawn(function()
         while _G.Chest do
@@ -104,7 +103,7 @@ Tabs.Player:AddToggle("Weapons",{Title="Auto Best Weapons"}):OnChanged(function(
 end)
 
 -- ================= AUTO FARM =================
-Tabs.AutoFarm:AddSection("Config")
+Tabs.AutoFarm:AddSection("Config Do Farm")
 
 local WorldSelect = Tabs.AutoFarm:AddDropdown("WorldSelect",{Title="Mundo",Values={"World 1","World 2","World 3","World 4"},Default="World 1"})
 local MobSelect = Tabs.AutoFarm:AddDropdown("MobSelect",{Title="Mob",Values={"Carregando..."}})
@@ -154,7 +153,7 @@ Tabs.AutoFarm:AddToggle("Farm",{Title="Auto Farm Ultra"}):OnChanged(function(v)
 end)
 
 -- ================= HATCH =================
-Tabs.Hatch:AddSection("Star")
+Tabs.Hatch:AddSection("Star Hatch")
 
 local EggSelect = Tabs.Hatch:AddDropdown("EggSelect",{
     Title="Star",
@@ -162,7 +161,7 @@ local EggSelect = Tabs.Hatch:AddDropdown("EggSelect",{
     Default="Dragon Ball (W1)"
 })
 
-Tabs.Hatch:AddToggle("Hatch",{Title="Auto Hatch"}):OnChanged(function(v)
+Tabs.Hatch:AddToggle("Hatch",{Title="Auto Star 0.01"}):OnChanged(function(v)
     _G.Hatch=v
     task.spawn(function()
         while _G.Hatch do
@@ -173,10 +172,10 @@ Tabs.Hatch:AddToggle("Hatch",{Title="Auto Hatch"}):OnChanged(function(v)
     end)
 end)
 
-Tabs.Hatch:AddSection("Gacha")
+Tabs.Hatch:AddSection("Gacha Power")
 
 local GachaSelect = Tabs.Hatch:AddDropdown("GachaSelect",{
-    Title="Poder",
+    Title="Gacha",
     Values={
         "Saiyan Power (W1)",
         "Dragon Power (W1)",
@@ -188,7 +187,7 @@ local GachaSelect = Tabs.Hatch:AddDropdown("GachaSelect",{
     }
 })
 
-Tabs.Hatch:AddToggle("Gacha",{Title="Auto Gacha"}):OnChanged(function(v)
+Tabs.Hatch:AddToggle("Gacha",{Title="Auto Gacha 0.01"}):OnChanged(function(v)
     _G.Gacha=v
     task.spawn(function()
         while _G.Gacha do
@@ -220,7 +219,7 @@ Tabs.Hatch:AddToggle("Skip",{Title="Skip Animação"}):OnChanged(function(v)
 end)
 
 -- ================= RAID OTIMIZADO =================
-Tabs.Gamemodes:AddSection("Raids")
+Tabs.Gamemodes:AddSection("Raids Farm")
 
 local RaidSelect = Tabs.Gamemodes:AddDropdown("RaidSelect",{
     Title="Raids",
@@ -294,21 +293,6 @@ Tabs.Gamemodes:AddButton({Title="Salvar Posição",Callback=function()
     local hrp=game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
     if hrp then SavedCFrame=hrp.CFrame end
 end})
-
-Tabs.Gamemodes:AddInput("Wave",{Title="Wave",Default="10",Numeric=true,Callback=function(v) _G.TargetWave=tonumber(v) end})
-
-Tabs.Gamemodes:AddToggle("Leave",{Title="Auto Leave"}):OnChanged(function(v)
-    _G.Leave=v
-    task.spawn(function()
-        while _G.Leave do
-            local w=workspace:FindFirstChild("Wave") or workspace:FindFirstChild("CurrentWave")
-            local c=w and tonumber(w.Value) or 0
-            if _G.TargetWave>0 and c>=_G.TargetWave then
-                if SavedCFrame then game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame=SavedCFrame end
-                _G.Leave=false _G.FarmRaid=false
-            end
-            task.wait(2)
-        end
     end)
 end)
 
