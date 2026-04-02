@@ -1,11 +1,13 @@
 -- GAME
-local GameName = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name
+local GameName = "Game"
 
 -- SERVICES
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 local Player = Players.LocalPlayer
+
+repeat task.wait() until Player and Player.Character
 
 -- SAFE HRP
 local function GetHRP()
@@ -14,7 +16,7 @@ local function GetHRP()
 end
 
 -- UI
-local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local Fluent = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/main/source.lua"))()
 
 local Window = Fluent:CreateWindow({
     Title = "ZEON HUB",
@@ -26,7 +28,7 @@ local Window = Fluent:CreateWindow({
     MinimizeKey = Enum.KeyCode.RightControl
 })
 
--- TABS (ÍCONE PREMIUM)
+-- TABS
 local Tabs = {
     AutoFarm = Window:AddTab({Title="Auto Farm",Icon="target"}),
     Player = Window:AddTab({Title="Players",Icon="swords"}),
@@ -76,20 +78,18 @@ Tabs.AutoFarm:AddToggle("Farm",{Title="Auto Farm"}):OnChanged(function(v)
                             if t then
                                 hrp.CFrame = t.CFrame * CFrame.new(0,0,3)
                                 Remotes.Clicked:FireServer()
-                                task.wait(0.15)
                             end
                         end
                     end
                 end
-                task.wait()
+
+                task.wait(0.15)
             end
         end)
     end
 end)
 
 -- ================= PLAYER =================
-
--- ⚔️ COMBAT
 Tabs.Player:AddSection("Combat")
 
 Tabs.Player:AddToggle("Click",{Title="Auto Attack"}):OnChanged(function(v)
@@ -104,7 +104,6 @@ Tabs.Player:AddToggle("Click",{Title="Auto Attack"}):OnChanged(function(v)
     end
 end)
 
--- 💰 AUTO CLAIM
 Tabs.Player:AddSection("Auto Claim")
 
 Tabs.Player:AddToggle("Chest",{Title="Auto Chest (1h)"}):OnChanged(function(v)
@@ -137,7 +136,7 @@ Tabs.Player:AddToggle("Chest",{Title="Auto Chest (1h)"}):OnChanged(function(v)
     end
 end)
 
--- ⭐ AUTO EQUIP
+-- AUTO EQUIP
 Tabs.Player:AddSection("Auto Equip")
 
 local function AutoEquip(toggle, folder, remote)
@@ -169,9 +168,11 @@ Tabs.Player:AddToggle("Weapon",{Title="Best Weapons"}):OnChanged(function(v)
 end)
 
 -- ================= HATCH =================
-Tabs.Hatch:AddSection("Star System")
+Tabs.Hatch:AddSection("Star")
 
-local Egg = Tabs.Hatch:AddDropdown("Egg",{Title="Star",Values={"Dragon Ball (W1)","One Piece (W2)","Clover Village (W3)","Demon Village (W4)"}})
+local Egg = Tabs.Hatch:AddDropdown("Egg",{Title="Star",Values={
+    "Dragon Ball (W1)","One Piece (W2)","Clover Village (W3)","Demon Village (W4)"
+}})
 
 Tabs.Hatch:AddToggle("Hatch",{Title="Auto Hatch"}):OnChanged(function(v)
     _G.Hatch=v
@@ -186,9 +187,11 @@ Tabs.Hatch:AddToggle("Hatch",{Title="Auto Hatch"}):OnChanged(function(v)
     end
 end)
 
-Tabs.Hatch:AddSection("Gacha System")
+Tabs.Hatch:AddSection("Gacha")
 
-local Gacha = Tabs.Hatch:AddDropdown("Gacha",{Title="Power",Values={"DragonBallPower","SaiyanPower","FruitPower","GrimoiresPower","ProsperityPower","DemonPower","BreathingPower"}})
+local Gacha = Tabs.Hatch:AddDropdown("Gacha",{Title="Power",Values={
+    "DragonBallPower","SaiyanPower","FruitPower","GrimoiresPower","ProsperityPower","DemonPower","BreathingPower"
+}})
 
 Tabs.Hatch:AddToggle("Gacha",{Title="Auto Gacha"}):OnChanged(function(v)
     _G.Gacha=v
@@ -206,7 +209,9 @@ end)
 -- ================= UPGRADES =================
 Tabs.Upgrades:AddSection("Leveling")
 
-local Level = Tabs.Upgrades:AddDropdown("Level",{Title="Leveling",Values={"HakiLeveling","BloodArtLeveling","WisteriaLeveling"}})
+local Level = Tabs.Upgrades:AddDropdown("Level",{Title="Leveling",Values={
+    "HakiLeveling","BloodArtLeveling","WisteriaLeveling"
+}})
 
 Tabs.Upgrades:AddToggle("AutoLevel",{Title="Auto Leveling"}):OnChanged(function(v)
     _G.AutoLevel=v
@@ -223,16 +228,16 @@ end)
 
 Tabs.Upgrades:AddSection("Laboratory")
 
-local Lab = Tabs.Upgrades:AddDropdown("Lab",{Title="Upgrade",Values={"Energy","Damage","Gacha Roll","Star Luck","Pet Equips","Star Open"}})
+local Lab = Tabs.Upgrades:AddDropdown("Lab",{Title="Upgrade",Values={
+    "Energy","Damage","Gacha Roll","Star Lucky","Pet Equips","Star Open"
+}})
 
 Tabs.Upgrades:AddToggle("AutoLab",{Title="Auto Upgrade"}):OnChanged(function(v)
     _G.AutoLab=v
     if v then
         task.spawn(function()
             while _G.AutoLab do
-                pcall(function()
-                    Remotes.LaboratoryUpgrade:FireServer(Lab.Value)
-                end)
+                Remotes.LaboratoryUpgrade:FireServer(Lab.Value)
                 task.wait(0.2)
             end
         end)
@@ -242,7 +247,9 @@ end)
 -- ================= GAMEMODES =================
 Tabs.Gamemodes:AddSection("Raids")
 
-local Raid = Tabs.Gamemodes:AddDropdown("Raid",{Title="Raid",Values={"WisteriaRaid","TowerRaid"},Multi=true,Default={"WisteriaRaid"}})
+local Raid = Tabs.Gamemodes:AddDropdown("Raid",{Title="Raid",Values={
+    "WisteriaRaid","TowerRaid"
+},Multi=true,Default={"WisteriaRaid"}})
 
 Tabs.Gamemodes:AddToggle("Join",{Title="Auto Join"}):OnChanged(function(v)
     _G.Join=v
@@ -253,7 +260,7 @@ Tabs.Gamemodes:AddToggle("Join",{Title="Auto Join"}):OnChanged(function(v)
                     Remotes.OpenWisteriaRaid:FireServer()
                 end
                 if table.find(Raid.Value,"TowerRaid") then
-                    Remotes.TowerRaid:FireServer()
+                    Remotes.JoinTowerRaid:FireServer()
                 end
                 task.wait(2)
             end
@@ -263,42 +270,64 @@ end)
 
 Tabs.Gamemodes:AddToggle("RaidFarm",{Title="Auto Farm Mobs"}):OnChanged(function(v)
     _G.RaidFarm=v
+
     if v then
         task.spawn(function()
             while _G.RaidFarm do
                 local hrp = GetHRP()
+                local humanoid = Player.Character and Player.Character:FindFirstChild("Humanoid")
+                local foundMob = false
 
-                for _,r in pairs(Raid.Value) do
+                for _,r in pairs(Raid.Value or {}) do
                     local raid = workspace:FindFirstChild(r)
+
                     if raid then
                         local e = raid:FindFirstChild("Enemy") or (raid:FindFirstChild("Raid1") and raid.Raid1:FindFirstChild("Enemy"))
+
                         if e then
                             for _,mob in pairs(e:GetChildren()) do
                                 if mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
-                                    local t = mob:FindFirstChild("HumanoidRootPart") or mob:FindFirstChild("Base")
+                                    foundMob = true
+                                    local t = mob:FindFirstChild("HumanoidRootPart")
                                     if t then
                                         hrp.CFrame = t.CFrame * CFrame.new(0,0,3)
                                         Remotes.Clicked:FireServer()
-                                        task.wait(0.15)
                                     end
                                 end
                             end
                         end
                     end
                 end
-                task.wait()
+
+                -- VOID SAFE
+                if not foundMob and hrp then
+                    if humanoid then
+                        humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+                    end
+
+                    if SavedCFrame then
+                        hrp.CFrame = SavedCFrame
+                    else
+                        hrp.CFrame = CFrame.new(0,-15,0)
+                    end
+                end
+
+                task.wait(0.05)
             end
         end)
     end
 end)
 
+-- SAVE POSITION
 Tabs.Gamemodes:AddSection("Save")
 
 Tabs.Gamemodes:AddButton({
     Title="Save Position",
     Callback=function()
         local hrp = GetHRP()
-        if hrp then SavedCFrame = hrp.CFrame end
+        if hrp then
+            SavedCFrame = hrp.CFrame
+        end
     end
 })
 
